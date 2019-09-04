@@ -178,7 +178,7 @@ def plot_colormap(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
-    :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -610,11 +610,19 @@ def plot_colormap(filename=None,
                     if np.ma.is_masked(maskgrid):
                         pass_map = pass_map[MaskX,:]
                         pass_map = pass_map[:,MaskY]
-                else: # vector variable
+                elif np.ndim(pass_map)==2: # vector variable
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
                     if np.ma.is_masked(maskgrid):
                         pass_map = pass_map[MaskX,:,:]
                         pass_map = pass_map[:,MaskY,:]
+                elif np.ndim(pass_map)==3:  # tensor variable
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                    if np.ma.is_masked(maskgrid):
+                        pass_map = pass_map[MaskX,:,:,:]
+                        pass_map = pass_map[:,MaskY,:,:]
+                else:
+                    print("Error in reshaping pass_maps!") 
+
                 pass_maps[mapval] = pass_map # add to the dictionary
         else:
             # Or gather over a number of time steps
@@ -655,11 +663,18 @@ def plot_colormap(filename=None,
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[MaskX,:]
                             pass_map = pass_map[:,MaskY]
-                    else: # vector variable
+                    elif np.ndim(pass_map)==2: # vector variable
                         pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[MaskX,:,:]
                             pass_map = pass_map[:,MaskY,:]
+                    elif np.ndim(pass_map)==3:  # tensor variable
+                        pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                        if np.ma.is_masked(maskgrid):
+                            pass_map = pass_map[MaskX,:,:,:]
+                            pass_map = pass_map[:,MaskY,:,:]
+                    else:
+                        print("Error in reshaping pass_maps!") 
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
