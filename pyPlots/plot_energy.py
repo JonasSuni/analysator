@@ -25,10 +25,10 @@ plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.ma
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
 
-global filedir_global, filetype_global 
+global filedir_global, filetype_global
 global cellid_global
 global emin_global, emax_global, enum_global
-global pop_global, plotE_global 
+global pop_global, plotE_global
 
 
 # Different style scientific format for colour bar ticks
@@ -38,9 +38,9 @@ def fmt(x, pos):
     return r'${}\times10^{{{}}}$'.format(a, b)
 
 
-def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, plotE=False):
+def energy_spectrum_jetstyle(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, plotE=False):
     ''' Calculates the energy spectrum of a single file at a single cellid
-        
+
         param: vlsvReader         vlsvReader handle
         param: cid                Cellid number to be used (int)
         param: pop                Name of population (string)
@@ -130,12 +130,129 @@ def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, pl
 
     for c,el in enumerate(energy_bin_edges[:-1]):
         # Energy in the middle of the bin [keV]
-        energy_i = (energy_bin_edges[c] + energy_bin_edges[c+1]) / 2. 
+        energy_i = (energy_bin_edges[c] + energy_bin_edges[c+1]) / 2.
         # Velocity in the middle of the bin (m/s)
         vel_i = np.sqrt(2.*qe*1.e3*energy_i/mass)
 
         shellmask = (cell_energy > el) & (cell_energy <= energy_bin_edges[c+1])
-        
+
+        if all(shellmask == False):
+            print('WARNING: No cells found between bin edges ' + str(energy_bin_edges[c]) + ' and ' + str(energy_bin_edges[c+1]) )
+            print('Output for this channel will be set to 1.E-30! Consider adjusting the energy settings.')
+        else:
+            if fluxout:
+                # Flux (what is measured by spacecraft) in keV(cm2 s sr keV)
+                dataout[c] = energy_i*vel_i**2/mass*np.mean(f_sparse[shellmask])*1.e-4*qe*1.e-3
+            else:
+                # PSD average
+                dataout[c] = np.mean(f_sparse[shellmask])
+
+        energyout[c] = energy_i*1.0e+3
+
+    if all(dataout==1.E-30):
+        print('WARNING: No cells found between the energy limits. Consider increasing them!')
+        print('Max, min energy = ' + str(max(cell_energy)) + ', ' + str(min(cell_energy)))
+
+    return (True, energyout, dataout )
+
+def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, plotE=False):
+    ''' Calculates the energy spectrum of a single file at a single cellid
+
+        param: vlsvReader         vlsvReader handle
+        param: cid                Cellid number to be used (int)
+        param: pop                Name of population (string)
+        param: emin               Minimum energy for spectrum [keV] (float)
+        param: emax               Maximum energy for spectrum [keV] (float)
+        param: enum               Number of energy bins for spectrum (int)
+        param: fluxout            If true returns fluxes instead of PSD (bool)
+        returns:                  Energy bin centers and PSD/flux for each bin (arrays)
+    '''
+
+    # check if velocity space exists in this cell
+    if vlsvReader.check_variable('fSaved'): #restart files will not have this value
+        if vlsvReader.read_variable('fSaved',cid) != 1.0:
+            print('Velocity space not found for this cellID!')
+            return (False,0,0)
+
+    # Get velocity data
+    velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
+
+    # check that velocity space has cells
+    if(len(velcells) > 0):
+        f = np.asarray(velcells.values())
+    else:
+        print('Velocity space cells empty!')
+        return (False,0,0)
+
+    # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer cells as well.
+    if pop=='electron':
+        fMin = 1e-21 # default
+    else:
+        fMin = 1e-16 # default
+    if vlsvReader.check_variable('MinValue') == True:
+        fMin = vlsvReader.read_variable('MinValue',cid)
+    ii_f = np.where(f >= fMin)
+    if len(ii_f[0]) < 1:
+        print('No velocity cells found above threshold: '+str(fMin))
+        return (False,0,0)
+    f_sparse = f[ii_f]
+    V_sparse = V[ii_f,:][0,:,:]
+
+    # Constants
+    amu = 1.660539e-27 # kg
+    if pop=='proton' or pop=='avgs':
+        mass = amu
+    elif pop=='helium':
+        mass = 4.0026*amu
+    elif pop=='oxygen':
+        mass = 15.999*amu
+    elif pop=='electron':
+        mass = 9.10938e-31 # kg
+    else:
+        print('Population not known! mass needs to be assigned in function energy_spectrum')
+        return(False, 0,0)
+
+    qe = 1.602177e-19 # C
+
+    # Add a line plot of the plasma energy if selected
+    if plotE == True:
+        if pop == 'avgs':
+            Vbulk = np.linalg.norm(vlsvReader.read_variable('V', cid))
+        else:
+            Vbulk = np.linalg.norm(vlsvReader.read_variable(pop+'/V', cid))
+        plasmaE = 0.5*mass*Vbulk**2/qe/1.e3 # plasma energy in keV (Non-relativistic)
+
+    # Calculate energy
+    VX = V_sparse[:,0]
+    VY = V_sparse[:,1]
+    VZ = V_sparse[:,2]
+    normV = np.sqrt(VX**2+VY**2+VZ**2)
+    cell_energy = 0.5*mass*normV**2/qe/1.e3 # keV (Non-relativistic)
+
+    # Calculate particle energy flux/PSD spectrum
+    try:
+        energy_bin_edges = np.logspace(np.log2(emin), np.log2(emax), num=enum+1, base=2.)
+    except RuntimeWarning:
+        print('emin and emax have to be positive numbers!')
+    except ValueError:
+        print('emin and emax have to be positive numbers!')
+    if plotE == True: # Add the plasma energy to the end of the dataout array
+        dataout = np.ones(len(energy_bin_edges))*1.E-30
+        dataout[-1] = plasmaE
+    else:
+        dataout = np.ones(len(energy_bin_edges)-1)*1.E-30
+
+    energyout = np.ones(len(energy_bin_edges)-1)
+
+    for c,el in enumerate(energy_bin_edges[:-1]):
+        # Energy in the middle of the bin [keV]
+        energy_i = (energy_bin_edges[c] + energy_bin_edges[c+1]) / 2.
+        # Velocity in the middle of the bin (m/s)
+        vel_i = np.sqrt(2.*qe*1.e3*energy_i/mass)
+
+        shellmask = (cell_energy > el) & (cell_energy <= energy_bin_edges[c+1])
+
         if all(shellmask == False):
             print('WARNING: No cells found between bin edges ' + str(energy_bin_edges[c]) + ' and ' + str(energy_bin_edges[c+1]) )
             print('Output for this channel will be set to 1.E-30! Consider adjusting the energy settings.')
@@ -151,7 +268,7 @@ def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, pl
 
     if all(dataout==1.E-30):
         print('WARNING: No cells found between the energy limits. Consider increasing them!')
-        print('Max, min energy = ' + str(max(cell_energy)) + ', ' + str(min(cell_energy))) 
+        print('Max, min energy = ' + str(max(cell_energy)) + ', ' + str(min(cell_energy)))
 
     return (True, energyout, dataout )
 
@@ -159,17 +276,17 @@ def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, pl
 def make_timemap(step):
     ''' Auxiliary function to be used for parallelisation of the time vs. energy spectrum plot
 
-        param: step       Time step of file to be processed 
+        param: step       Time step of file to be processed
         returns:          Time of simulation [s], energy of bins [keV] and PSD/flux for each bin
 
     '''
     # Getting file handle
-    filename = filedir_global+filetype_global+'.'+str(step).rjust(7,'0')+'.vlsv' 
+    filename = filedir_global+filetype_global+'.'+str(step).rjust(7,'0')+'.vlsv'
     f = pt.vlsvfile.VlsvReader(filename)
     print(filename + " is being processed...")
 
     # Getting energy spectrum data
-    (success, energy, particledata) = energy_spectrum(f, cellid_global, pop_global, emin_global, emax_global, enum=enum_global, plotE=plotE_global)
+    (success, energy, particledata) = energy_spectrum_jetstyle(f, cellid_global, pop_global, emin_global, emax_global, enum=enum_global, plotE=plotE_global)
 
     time = f.read_parameter("time")
     # TODO: I think this time change is already accounted for in the read_parameter function
@@ -183,24 +300,24 @@ def make_timemap(step):
 
     return (out)
 
-def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, enum=16, fluxout=False, numproc=8):    
+def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, enum=16, fluxout=False, numproc=8):
 
     ''' Outputs data arrays of time/energy spectrum during time interval.
 
     :param filedir:         Directory where files are located
     :param filetype:        Type of file to be used [example: 'bulk']
     :param pop:             Name of population
-    :param start:           Step for starting the data 
+    :param start:           Step for starting the data
     :param stop:            Step for ending the data
     :param cid:             cellID number
-    :param emin,emax,enum:  min and max values (edges) for energy levels [keV] and number of energy bins 
+    :param emin,emax,enum:  min and max values (edges) for energy levels [keV] and number of energy bins
     :kword fluxout:         If True, outputs fluxes instead of PSD (Default: False)
     :kword numproc:         Number of processes for parallelisation (default: 8)
 
     :returns:               Tuple (time, energy, datamap) containing the time data [1-D array], the energy channels [1-D array]
                             and the data output [2-D array] as PSD or flux.
 
-    
+
     # Example usage:
     import pytools as pt
     data = pt.plot.get_energy_spectrum('./', 'bulk', 'proton', 0, 100, 10000, 1, 100, enum=12)
@@ -211,7 +328,7 @@ def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, en
     global emin_global, emax_global, enum_global
 
     # check if should use old version "avgs"
-    filename = filedir+filetype+'.'+str(start).rjust(7,'0')+'.vlsv' 
+    filename = filedir+filetype+'.'+str(start).rjust(7,'0')+'.vlsv'
     f=pt.vlsvfile.VlsvReader(filename)
     if pop=="proton":
        if not f.check_population(pop):
@@ -224,8 +341,8 @@ def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, en
     else:
         if not f.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            sys.exit() 
-    
+            sys.exit()
+
     # TODO do not use global variables, check that variables are valid
     filedir_global = filedir
     filetype_global = filetype
@@ -234,7 +351,7 @@ def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, en
     emax_global = emax
     enum_global = enum
     cellid_global = cid
-    
+
     datamap = np.array([])
     time_ar = np.array([])
 
@@ -250,7 +367,7 @@ def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, en
         time_ar = np.append(time_ar,j[0])
         datamap = np.append(datamap,j[1])
     energy_ar = return_array[0][2]
-    
+
     #Serial construction of spectrum (for debugging)
     #for step in range(start,stop+1):
     #    func_return = make_timemap(step)
@@ -283,7 +400,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
                      fmin=None, fmax=None,
                      cellcoordplot=None, cellidplot=None,
                      numproc=8
-                     ):    
+                     ):
 
     ''' Plots a time/energy spectrum during time interval (colour plot).
 
@@ -296,7 +413,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
                             forward slash, the final parti will be used as a perfix for the files.
 
     :kword emin,emax,enum:  min and max values (edges) for energy levels [keV] and number of energy bins
-    :kword plotE:           Plots an overlaid line plot of the plasma energy 
+    :kword plotE:           Plots an overlaid line plot of the plasma energy
     :kword colormap:        colour scale for plot, use e.g. jet, viridis, plasma, inferno, magma, nipy_spectral, RdBu
     :kword title:           string to use as title instead of map name
     :kword draw:            Draw image on-screen instead of saving to file (requires x-windowing)
@@ -307,7 +424,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     :kword notre:           flag to use metres (if ==1) or kilometres as axis unit
     :kword thick:           line and axis thickness, default=1.0
     :kword lin:             flag for using linear colour scaling instead of log
-    :kword fmin,fmax:       min and max values for colour scale and colour bar of the PSD. 
+    :kword fmin,fmax:       min and max values for colour scale and colour bar of the PSD.
 
     :kword cellcoordplot:   Coordinates of cell to be plottedd (3-D array)
     :kword cellidplot:      cellID be plotted (list)
@@ -315,7 +432,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
 
     :returns:               Outputs an image to a file or to the screen.
 
-    
+
     # Example usage:
     import pytools as pt
     pt.plot.plot_energy_spectrum(filedir='./', start=0, stop=100, emin=1, emax=50, enum=16, cellidplot=[300100])
@@ -331,7 +448,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     emin_global=emin
     emax_global=emax
     enum_global=enum
-    if not plotE == None: 
+    if not plotE == None:
         plotE_global = True
     else:
         plotE_global = False
@@ -350,7 +467,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     if ((filedir!=None) and (start!=None) and (stop!=None)):
         filelist = []
         for step in range(start,stop+1):
-            filename = filedir+filetype+'.'+str(step).rjust(7,'0')+'.vlsv' 
+            filename = filedir+filetype+'.'+str(step).rjust(7,'0')+'.vlsv'
             filelist.append(filename)
     else:
         print("ERROR: needs a bulk file directory and start/stop steps")
@@ -359,7 +476,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     # Scientific notation for colorbar ticks?
     if usesci==None:
         usesci=1
-    
+
     if colormap==None:
         #colormap="YlOrRd"
         colormap="hot_desaturated"
@@ -406,7 +523,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     savefigname = outputdir+run+"_ener_time_spec"+stepstr+"_"+str(cellidplot[0])+".png"
 
 
-    # If population isn't defined i.e. defaults to protons, check if 
+    # If population isn't defined i.e. defaults to protons, check if
     # instead should use old version "avgs"
     if pop=="proton":
        if not f.check_population(pop):
@@ -419,8 +536,8 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     else:
         if not f.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            sys.exit() 
-    pop_global = pop 
+            sys.exit()
+    pop_global = pop
 
     #if fmin!=None and fmax!=None:
     # TODO how to handle fmin and fmax
@@ -432,13 +549,13 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(fmin,fmax)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(fmin,fmax,num=7)            
-   
+        ticks = np.linspace(fmin,fmax,num=7)
+
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if draw!=None:
         plt.switch_backend('TkAgg')
     else:
-        plt.switch_backend('Agg')  
+        plt.switch_backend('Agg')
 
     # Checking if CellID exists
     if cellidplot==None and cellcoordplot==None :
@@ -462,7 +579,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
         time_ar = np.append(time_ar,j[0])
         datamap = np.append(datamap,j[1])
     energy = return_array[0][2]
-    
+
     #Serial construction of spectrum (for debugging)
     #for step in range(start,stop+1):
     #    func_return = make_timemap(step)
@@ -486,7 +603,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
 
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
-    
+
     # Generates the mesh to map the data to.
     # Note, datamap is still of shape [ysize,xsize] (?)
     [XmeshXY,YmeshXY] = scipy.meshgrid(time_ar,energy)
@@ -531,7 +648,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     cax = divider.append_axes("right", size="5%", pad=0.1)
 
     # First draw colorbar
-    if usesci==0:        
+    if usesci==0:
         cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
     else:
         cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
@@ -562,9 +679,9 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     # set axis exponent offset font sizes
     ax1.yaxis.offsetText.set_fontsize(fontsize)
     ax1.xaxis.offsetText.set_fontsize(fontsize)
-          
+
     # Add Vlasiator watermark
-    if wmark!=None:        
+    if wmark!=None:
         wm = plt.imread(get_sample_data(watermarkimage))
         newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
         newax.imshow(wm)
@@ -581,4 +698,3 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     else:
         plt.draw()
         plt.show()
-
