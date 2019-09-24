@@ -141,7 +141,7 @@ def energy_spectrum_jetstyle(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=
             print('Output for this channel will be set to 1.E-30! Consider adjusting the energy settings.')
         else:
             if fluxout:
-                # Flux (what is measured by spacecraft) in keV(cm2 s sr keV)
+                # Flux (what is measured by spacecraft) in keV/(cm2 s sr keV)
                 dataout[c] = energy_i*vel_i**2/mass*np.mean(f_sparse[shellmask])*1.e-4*qe*1.e-3
             else:
                 # PSD average
@@ -286,7 +286,7 @@ def make_timemap(step):
     print(filename + " is being processed...")
 
     # Getting energy spectrum data
-    (success, energy, particledata) = energy_spectrum_jetstyle(f, cellid_global, pop_global, emin_global, emax_global, enum=enum_global)
+    (success, energy, particledata) = energy_spectrum(f, cellid_global, pop_global, emin_global, emax_global, enum=enum_global)
     time = f.read_parameter("time")
     # TODO: I think this time change is already accounted for in the read_parameter function
     if time is None:      # in BCH, at some point "t" was changed to "time"
