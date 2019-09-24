@@ -287,7 +287,6 @@ def make_timemap(step):
 
     # Getting energy spectrum data
     (success, energy, particledata) = energy_spectrum_jetstyle(f, cellid_global, pop_global, emin_global, emax_global, enum=enum_global)
- plotE=plotE_global
     time = f.read_parameter("time")
     # TODO: I think this time change is already accounted for in the read_parameter function
     if time is None:      # in BCH, at some point "t" was changed to "time"
