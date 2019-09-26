@@ -491,7 +491,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     # TODO check if files have VDFs
     # Stop and start times
     f=pt.vlsvfile.VlsvReader(filelist[-1])
-    tstop=Nonebal, emax_global, enum=enum_global)
+    tstop=None
     tstop=f.read_parameter("time")
     if tstop==None:
         tstop=f.read_parameter("t")
