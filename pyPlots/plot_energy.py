@@ -142,7 +142,7 @@ def energy_spectrum_jetstyle(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=
         else:
             if fluxout:
                 # Flux (what is measured by spacecraft) in keV(cm2 s sr keV)
-                dataout[c] = vel_i**2/mass*np.mean(f_sparse[shellmask])*1.e-4
+                dataout[c] = energy_i*vel_i**2/mass*np.mean(f_sparse[shellmask])*1.e-4*qe*1.e+3
             else:
                 # PSD average
                 dataout[c] = np.mean(f_sparse[shellmask])
