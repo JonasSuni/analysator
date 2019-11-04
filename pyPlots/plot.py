@@ -39,4 +39,8 @@ import plot_helpers
 from plot_colormap import plot_colormap
 from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
+
 from plot_energy import plot_energy_spectrum,get_energy_spectrum
+
+from plot_colormap3dslice import plot_colormap3dslice
+
