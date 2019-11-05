@@ -496,7 +496,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     if tstop==None:
         tstop=f.read_parameter("t")
     if tstop==None:
-        print "Unknown time format encountered for stop file"
+        print("Unknown time format encountered for stop file")
         return
 
     f=pt.vlsvfile.VlsvReader(filelist[0])
@@ -505,7 +505,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     if tstart==None:
         tstart=f.read_parameter("t")
     if tstart==None:
-        print "Unknown time format encountered for start file"
+        print("Unknown time format encountered for start file")
         return
 
     # Plot title
