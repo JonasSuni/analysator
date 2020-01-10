@@ -445,7 +445,7 @@ def plot_colormap(filename=None,
     # Select window to draw
     if len(boxm)==4:
         boxcoords=list(boxm)
-    elif len(list(boxre))==4:
+    elif len(boxre)==4:
         boxcoords=[i*Re for i in boxre]
     else:
         boxcoords=list(simext)
