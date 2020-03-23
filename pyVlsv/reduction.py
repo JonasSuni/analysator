@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 ''' A file for doing data reduction on variables
 '''
@@ -242,7 +242,7 @@ def v( variables ):
       return np.ma.divide(rho_v,rho[:,np.newaxis])
 
 def vms( variables ):
-   ''' Data reducer function for getting magnetosonic velocity 
+   ''' Data reducer function for getting magnetosonic velocity
        input: P, rhom, B
    '''
    epsilon = sys.float_info.epsilon
@@ -300,6 +300,18 @@ def Mms( variables ):
    Mms = np.ma.divide(bulkv, magnetosonicspeed)
    return Mms
 
+def Mmsx( variables ):
+    ''' Data reducer function for getting the magnetosonic Mach number in x-direction
+    '''
+    V = np.array(variables[0])
+    if( np.ndim(V)==2 ):
+       Vx = V[:,0]
+    else:
+       Vx = V[0]
+    magnetosonicspeed = np.ma.masked_less_equal(variables[1],0)
+    Mms = np.ma.divide(np.abs(Vx), magnetosonicspeed)
+    return Mms
+
 def ParallelVectorComponent( variables ):
    ''' Data reducer function for vector component parallel to the magnetic field (or another vector)
    '''
@@ -327,14 +339,14 @@ def PerpendicularVectorComponent( variables ):
       vpara = (inputvector*bgnorm).sum(-1)
       vmag = np.linalg.norm(inputvector, axis=-1)
       return np.sqrt(vmag*vmag - vpara*vpara)
-   
+
 def FullTensor( variables ):
    ''' Data reducer function to reconstruct a full tensor from diagonal and off-diagonal
        components (e.g. the pressure tensor)
    '''
    TensorDiagonal = np.array(variables[0])
    TensorOffDiagonal = np.array(variables[1])
-   if(np.ndim(TensorDiagonal)==1 ):      
+   if(np.ndim(TensorDiagonal)==1 ):
       TensorDiagonal = TensorDiagonal.reshape(1,3)[0]
       TensorOffDiagonal = TensorOffDiagonal.reshape(1,3)[0]
       return np.array([[TensorDiagonal[0], TensorOffDiagonal[2], TensorOffDiagonal[1]],
@@ -354,7 +366,7 @@ def FullTensor( variables ):
       return result
 
 def RotatedTensor( variables ):
-   ''' Data reducer for rotating e.g. the pressure tensor to align the z-component 
+   ''' Data reducer for rotating e.g. the pressure tensor to align the z-component
        with a vector, e.g. the magnetic field
    '''
    Tensor = variables[0]
@@ -485,7 +497,7 @@ def beta( variables ):
    ''' Data reducer for finding the plasma beta
    '''
    Pressure = variables[0]
-   Magneticfield = variables[1]   
+   Magneticfield = variables[1]
    return 2.0 * 1.25663706144e-6 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
 
 def rMirror( variables ):
@@ -496,7 +508,7 @@ def rMirror( variables ):
    TAniso = Anisotropy([PTRotated]) # PAniso == TAniso
    PPerp = PerpendicularTensorComponent([PTRotated])
    betaPerp = beta([PPerp,B])
-   return betaPerp * (TAniso - 1)   
+   return betaPerp * (TAniso - 1)
 
 def thermalvelocity( variables ):
    Temperature = variables[0]
@@ -552,7 +564,7 @@ def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
    bulk_velocity = variables[0]
    B = variables[1]
    B_unit = B / np.linalg.norm(B)
-   
+
    gyrophase_data = gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
    histo = pl.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
    return np.std(histo[0])/np.mean(histo[0])
@@ -614,7 +626,7 @@ for i in range(50):
    data_operators[i] = makelambda(i)
    data_operators[str(i)] = data_operators[i]
 
-   
+
 # When vlsvreader tries to read data, it will check using the following order:
 # 1) Is the variable directly in the file?
 # 2) Is the name something that exists in the file, but only per-population? (answer: sum over populations)
@@ -632,6 +644,7 @@ datareducers["vs"] =                     DataReducerVariable(["pressure", "rhom"
 datareducers["va"] =                     DataReducerVariable(["rhom", "b"], va, "m/s", 1, latex=r"$v_\mathrm{A}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["ma"] =                     DataReducerVariable(["v", "va"], MA, "", 1, latex=r"$M_\mathrm{A}$",latexunits=r"")
 datareducers["mms"] =                    DataReducerVariable(["v", "vms"], Mms, "", 1, latex=r"$M_\mathrm{ms}$",latexunits=r"")
+datareducers["mmsx"] =                    DataReducerVariable(["v", "vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms}$",latexunits=r"")
 
 datareducers["vparallel"] =              DataReducerVariable(["v", "b"], ParallelVectorComponent, "m/s", 1, latex=r"$V_\parallel$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["vperpendicular"] =         DataReducerVariable(["v", "b"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_\perp$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -977,4 +990,3 @@ multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
-
