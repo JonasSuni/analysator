@@ -644,7 +644,7 @@ datareducers["vs"] =                     DataReducerVariable(["pressure", "rhom"
 datareducers["va"] =                     DataReducerVariable(["rhom", "b"], va, "m/s", 1, latex=r"$v_\mathrm{A}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["ma"] =                     DataReducerVariable(["v", "va"], MA, "", 1, latex=r"$M_\mathrm{A}$",latexunits=r"")
 datareducers["mms"] =                    DataReducerVariable(["v", "vms"], Mms, "", 1, latex=r"$M_\mathrm{ms}$",latexunits=r"")
-datareducers["mmsx"] =                    DataReducerVariable(["v", "vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms}$",latexunits=r"")
+datareducers["mmsx"] =                    DataReducerVariable(["v", "vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms,x}$",latexunits=r"")
 
 datareducers["vparallel"] =              DataReducerVariable(["v", "b"], ParallelVectorComponent, "m/s", 1, latex=r"$V_\parallel$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["vperpendicular"] =         DataReducerVariable(["v", "b"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_\perp$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
