@@ -33,6 +33,7 @@ import sys
 
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
+kb = 1.38065e-23
 
 def pass_op( variable ):
    # do nothing
@@ -607,6 +608,14 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def core_heating( variables ):
+    pr_rhonbs = variables[0]
+    pr_PTDNBS = variables[1]
+    pr_pressurenbs = (1.0/3.0) * (pr_PTDNBS.sum(-1))
+    pr_TNBS = pr_pressurenbs/ ((pr_rhonbs + 1.e-10) * kb)
+    return pr_TNBS
+
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -744,6 +753,8 @@ datareducers["vbeamratio"] =             DataReducerVariable(["vbackstream", "vn
 datareducers["thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["bz_linedipole_avg"] =      DataReducerVariable(["x", "y", "z", "dx", "dy", "dz"], Bz_linedipole_avg, "T", 1, latex=r"$\langle B_{z,\mathrm{ld}}\rangle$")
 datareducers["bz_linedipole_diff"] =     DataReducerVariable(["b", "bz_linedipole_avg"], Bz_linedipole_diff, "", 1, latex=r"$\Delta B_{z,\mathrm{ld}}$")
+
+datareducers["core_heating"] =          DataReducerVariable(["RhoNonBackstream", "PTensorNonBackstreamDiagonal"], core_heating, "K", 1, latex=r"$T_\mathrm{core}$", latexunits=r"K")
 
 #reducers with useVspace
 datareducers["gyrophase_relstddev"] =    DataReducerVariable(["v", "b"], gyrophase_relstddev, "", 1, useVspace=True) # I think this has vector length 1?
