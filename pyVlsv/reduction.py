@@ -423,6 +423,16 @@ def Pdyn( variables ):
    rhom = np.array(variables[1])
    return Vmag*Vmag*rhom
 
+def Pmag( variables ):
+    Magneticfield = variables[0]
+    return np.sum(np.asarray(Magneticfield)**2,axis=-1)/(2.0*1.25663706144e-6)
+
+def Ptot( variables ):
+    Pmag = variables[0]
+    Pressure = variables[1]
+    Pdyn = variables[2]
+    return Pmag+Pressure+Pdyn
+
 def Pdynx( variables ):
    ''' Data reducer function for dynamic pressure with just V_x
        input: V, rhom
