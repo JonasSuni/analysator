@@ -679,6 +679,8 @@ datareducers["ejeperpendicular"] =         DataReducerVariable(["eje", "b"], Per
 
 datareducers["pdyn"] =            DataReducerVariable(["v", "rhom"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
 datareducers["pdynx"] =            DataReducerVariable(["v", "rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
+datareducers["pmag"] =            DataReducerVariable(["b"], Pmag, "Pa", 1, latex=r"$P_\mathrm{mag}$",latexunits=r"Pa")
+datareducers["ptot"] =            DataReducerVariable(["pmag", "pressure", "pdyn"], Ptot, "Pa", 1, latex=r"$P_\mathrm{tot}$",latexunits=r"Pa")
 
 datareducers["poynting"] = DataReducerVariable(["e", "b"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")
 datareducers["di"] =              DataReducerVariable(["proton/rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
