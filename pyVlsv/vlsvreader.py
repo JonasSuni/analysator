@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import struct
 import xml.etree.ElementTree as ET
@@ -35,7 +35,7 @@ from variable import get_data
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
-   ''' 
+   '''
 
 
    ''' Meshinfo is an information container for multiple meshes.
@@ -50,7 +50,7 @@ class VlsvReader(object):
 
           :param file_name:     Name of the vlsv file
       '''
-      # Make sure the path is set in file name: 
+      # Make sure the path is set in file name:
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
@@ -64,7 +64,7 @@ class VlsvReader(object):
       self.__blocks_per_cell = {} # per-pop
       self.__blocks_per_cell_offsets = {} # per-pop
       self.__order_for_cellid_blocks = {} # per-pop
-      
+
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -87,10 +87,10 @@ class VlsvReader(object):
          self.__ymax = self.read_parameter("ymax")
          self.__zmax = self.read_parameter("zmax")
       else:
-         #new style vlsv file with 
-         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
-         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
-         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+         #new style vlsv file with
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)
          self.__xcells = bbox[0]
          self.__ycells = bbox[1]
          self.__zcells = bbox[2]
@@ -116,13 +116,13 @@ class VlsvReader(object):
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if "name" in child.attrib:
-                  popname = child.attrib["name"] 
+                  popname = child.attrib["name"]
               else:
                   popname = "avgs"
 
               # Create a new (empty) MeshInfo-object for this population
               pop = self.MeshInfo()
-              
+
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
@@ -152,7 +152,7 @@ class VlsvReader(object):
                     pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
                  else:
-                    #no velocity space in this file, e.g., file n ot written by Vlasiator 
+                    #no velocity space in this file, e.g., file n ot written by Vlasiator
                     pop.__vxblocks = 0
                     pop.__vyblocks = 0
                     pop.__vzblocks = 0
@@ -172,9 +172,9 @@ class VlsvReader(object):
 
               else:
                  #new style vlsv file with bounding box
-                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)   
-                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)   
-                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)   
+                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)
+                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)
+                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)
                  pop.__vxblocks = bbox[0]
                  pop.__vyblocks = bbox[1]
                  pop.__vzblocks = bbox[2]
@@ -201,7 +201,7 @@ class VlsvReader(object):
 
    def __read_xml_footer(self):
       ''' Reads in the XML footer of the VLSV file and store all the content
-      ''' 
+      '''
       max_xml_size = 1000000
       #(endianness,) = struct.unpack("c", fptr.read(1))
       if self.__fptr.closed:
@@ -235,11 +235,11 @@ class VlsvReader(object):
          cellids=[ cellids ]
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid]=index
-         
+
 
    def __read_blocks(self, cellid, pop="proton"):
       ''' Read raw velocity block data from the open file.
-      
+
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
@@ -255,7 +255,7 @@ class VlsvReader(object):
       else:
          # Uses arrays (much faster to initialize)
          if not pop in self.__cells_with_blocks:
-            self.__set_cell_offset_and_blocks_nodict(pop) 
+            self.__set_cell_offset_and_blocks_nodict(pop)
          # Check that cells has vspace
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
@@ -333,7 +333,7 @@ class VlsvReader(object):
       if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
-      #these two arrays are in the same order: 
+      #these two arrays are in the same order:
       #list of cells for which dist function is saved
       cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop)
       #number of blocks in each cell for which data is stored
@@ -504,8 +504,8 @@ class VlsvReader(object):
       return self.__fileindex_for_cellid
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
-      ''' Read data from the open vlsv file. 
-      
+      ''' Read data from the open vlsv file.
+
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
@@ -524,7 +524,7 @@ class VlsvReader(object):
                self.__read_fileindex_for_cellid()
          else: # list of cellids
             self.__read_fileindex_for_cellid()
-               
+
       if tag == "" and name == "" and tag == "":
          print("Bad arguments at read")
 
@@ -535,8 +535,8 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-         
-      # Get population and variable names from data array name 
+
+      # Get population and variable names from data array name
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
@@ -565,13 +565,13 @@ class VlsvReader(object):
 
             # Define efficient method to read data in
             try: # try-except to see how many cellids were given
-               lencellids=len(cellids) 
+               lencellids=len(cellids)
                # Read multiple specified cells
                # If we're reading a large amount of single cells, it'll be faster to just read all
                # data from the file system and sort through it. For the CSC disk system, this
                # becomes more efficient for over ca. 5000 cellids.
                arraydata = []
-               if lencellids>5000: 
+               if lencellids>5000:
                   result_size = len(cellids)
                   read_size = array_size
                   read_offsets = [0]
@@ -588,7 +588,7 @@ class VlsvReader(object):
                   result_size = 1
                   read_size = 1
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-                  
+
             for r_offset in read_offsets:
                use_offset = int(variable_offset + r_offset)
                fptr.seek(use_offset)
@@ -606,7 +606,7 @@ class VlsvReader(object):
                   data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
                if len(read_offsets)!=1:
                   arraydata.append(data)
-            
+
             if len(read_offsets)==1 and result_size<read_size:
                # Many single cell id's requested
                # Pick the elements corresponding to the requested cells
@@ -624,7 +624,7 @@ class VlsvReader(object):
 
             if vector_size > 1:
                data=data.reshape(result_size, vector_size)
-            
+
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
                print("Data variable with vector size 1: Changed magnitude operation to absolute")
@@ -642,9 +642,9 @@ class VlsvReader(object):
       else:
          reducer_reg = datareducers
          reducer_multipop = multipopdatareducers
-            
+
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      if self.check_variable(self.active_populations[0]+'/'+name): 
+      if self.check_variable(self.active_populations[0]+'/'+name):
          tmp_vars = []
          for pname in self.active_populations:
             vlsvvariables.activepopulation = pname
@@ -660,7 +660,7 @@ class VlsvReader(object):
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
-       
+
          # Return the output of the datareducer
          if reducer.useVspace:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
@@ -689,7 +689,7 @@ class VlsvReader(object):
       if 'pop/'+varname in reducer_multipop:
          reducer = reducer_multipop['pop/'+varname]
          vlsvvariables.activepopulation = popname
-         
+
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
@@ -697,8 +697,8 @@ class VlsvReader(object):
 
          # Read the necessary variables:
          if reducer.useVspace:
-            print("Error: useVspace flag is not implemented for multipop datareducers!") 
-            return 
+            print("Error: useVspace flag is not implemented for multipop datareducers!")
+            return
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
@@ -710,14 +710,14 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
+         print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!")
       if self.__fptr.closed:
          fptr.close()
 
 
    def read_metadata(self, name="", tag="", mesh=""):
-      ''' Read variable metadata from the open vlsv file. 
-      
+      ''' Read variable metadata from the open vlsv file.
+
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
@@ -725,7 +725,7 @@ class VlsvReader(object):
                 the unit of the variable as a regular string
                 the unit of the variable as a LaTeX-formatted string
                 the description of the variable as a LaTeX-formatted string
-                the conversion factor to SI units as a string                  
+                the conversion factor to SI units as a string
       '''
 
       if tag == "" and name == "":
@@ -738,9 +738,9 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-      
+
       # Seek for requested data in VLSV file
-      for child in self.__xml_root:         
+      for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
                continue
@@ -756,20 +756,20 @@ class VlsvReader(object):
          unit = child.attrib["unit"]
          unitLaTeX = child.attrib["unitLaTeX"]
          variableLaTeX = child.attrib["variableLaTeX"]
-         unitConversion = child.attrib["unitConversion"] 
+         unitConversion = child.attrib["unitConversion"]
          return unit, unitLaTeX, variableLaTeX, unitConversion
-            
+
       if name!="":
          print("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       if self.__fptr.closed:
          fptr.close()
       return -1
-         
+
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
-      :param coords: Coordinates from which to read data 
+      :param coords: Coordinates from which to read data
       :param periodic: Periodicity of the system. Default is periodic in all dimension
       :param operator: Datareduction operator. "pass" does no operation on data
       :returns: numpy array with the data
@@ -777,7 +777,7 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       coordinates = get_data(coordinates)
-      
+
       if len(np.shape(coordinates)) == 1:
          #get closest id
          closest_cell_id=self.get_cellid(coordinates)
@@ -794,7 +794,7 @@ class VlsvReader(object):
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         
+
          scaled_coordinates=np.zeros(3)
          for i in range(3):
             if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
@@ -811,7 +811,7 @@ class VlsvReader(object):
                value_length=1
          else:
             value_length=1
-         
+
          #now identify 8 cells, starting from the lower one
          ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
@@ -829,7 +829,7 @@ class VlsvReader(object):
          c1d=np.zeros((2,value_length))
          for z in [0,1]:
             c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
-            
+
          final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
          if len(final_value)==1:
             return final_value[0]
@@ -838,17 +838,17 @@ class VlsvReader(object):
 
       else:
          #multiple coordinates
-         
+
          # read all cells as we're anyway going to need this
          whole_cellids  = self.read_variable("CellID")
          sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
-         
+
          # Check one value for the length
          if isinstance(sorted_variable[0], Iterable):
             value_length=len(sorted_variable[0])
          else:
             value_length=1
-         
+
          # start iteration
          if value_length == 1:
             ret_array = np.zeros(len(coordinates))
@@ -861,8 +861,9 @@ class VlsvReader(object):
                   ret_array[i]=None
                else:
                   ret_array[i,:] = None
+               continue
             closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
-            
+
             #now identify the lower one of the 8 neighbor cells
             offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
                       0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
@@ -872,36 +873,36 @@ class VlsvReader(object):
             offset = [1,1,1]
             upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
             upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-            
+
             scaled_coordinates=np.zeros(3)
             for j in range(3):
                if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
                   scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
                else:
                   scaled_coordinates[j] = 0.0 #Special case for periodic systems with one cell in a dimension
-            
+
             ngbrvalues=np.zeros((2,2,2,value_length))
             for x in [0,1]:
                for y in [0,1]:
                   for z  in [0,1]:
                      id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
                      ngbrvalues[x,y,z,:] = sorted_variable[id]
-            
+
             c2d=np.zeros((2,2,value_length))
             for y in  [0,1]:
                for z in  [0,1]:
                   c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
-            
+
             c1d=np.zeros((2,value_length))
             for z in [0,1]:
                c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
-            
+
             final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
             if len(final_value)==1:
                ret_array[i] = final_value[0]
             else:
                ret_array[i, :] = final_value
-         
+
          # Done.
          return ret_array
 
@@ -974,7 +975,7 @@ class VlsvReader(object):
            x = (i // fsgridDecomposition[2]) // fsgridDecomposition[1]
            y = (i // fsgridDecomposition[2]) % fsgridDecomposition[1]
            z = i % fsgridDecomposition[2]
- 	   
+
            thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
                             calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
                             calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
@@ -984,19 +985,19 @@ class VlsvReader(object):
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
 
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
-           # Extract datacube of that task... 
+           # Extract datacube of that task...
            if len(rawData.shape) > 1:
                thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
                thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]],order='F')
 
-               # ... and put it into place 
+               # ... and put it into place
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
            else:
                # Special case for scalar data
                thatTasksData = rawData[currentOffset:currentOffset+totalSize]
                thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
 
-               # ... and put it into place 
+               # ... and put it into place
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
            currentOffset += totalSize
@@ -1004,7 +1005,7 @@ class VlsvReader(object):
        return np.squeeze(orderedData)
 
    def read_variable(self, name, cellids=-1,operator="pass"):
-      ''' Read variables from the open vlsv file. 
+      ''' Read variables from the open vlsv file.
       Arguments:
       :param name: Name of the variable
       :param cellids: a value of -1 reads all data
@@ -1032,7 +1033,7 @@ class VlsvReader(object):
       # Force lowercase
       name = name.lower()
 
-      # Get population and variable names from data array name 
+      # Get population and variable names from data array name
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
@@ -1057,7 +1058,7 @@ class VlsvReader(object):
       elif (self.check_variable(name) and (name in vlsvvariables.unitsdict)):
          units = vlsvvariables.unitsdict[name]
          latex = vlsvvariables.latexdict[name]
-         latexunits = vlsvvariables.latexunitsdict[name]            
+         latexunits = vlsvvariables.latexunitsdict[name]
       elif name in reducer_reg:
          units = reducer_reg[name].units
          latex = reducer_reg[name].latex
@@ -1090,7 +1091,7 @@ class VlsvReader(object):
          if operator=="magnitude":
             latex = r"$|$"+latex+r"$|$"
          else:
-            latex = latex+r"{$_{"+operator+r"}$}"
+            latex = latex+r"$_{"+operator+r"}$"
          return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
          return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
@@ -1113,7 +1114,7 @@ class VlsvReader(object):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
-   
+
       # Get cell indices:
       cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
       # Get the cell id:
@@ -1130,7 +1131,7 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-      
+
       cellid = np.asarray(cellid)
 
       # Get cell lengths:
@@ -1141,7 +1142,7 @@ class VlsvReader(object):
       cellindices[0] = (cellid%(int)(self.__xcells)).astype(int)
       cellindices[1] = ((cellid/(int)(self.__xcells))%(int)(self.__ycells)).astype(int)
       cellindices[2] = (cellid/(int)(self.__xcells*self.__ycells)).astype(int)
-   
+
       # Get cell coordinates:
       cellcoordinates = np.zeros((3,cellid.size))
       cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
@@ -1168,7 +1169,7 @@ class VlsvReader(object):
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
       cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
       cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
-   
+
       # Get cell coordinates:
       cellcoordinates = np.zeros(3)
       cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
@@ -1219,7 +1220,7 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] + sys_size[i]
                elif ngbr_indices[i] >= sys_size[i]:
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
-   
+
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
             #out of bounds
             return 0
@@ -1381,7 +1382,7 @@ class VlsvReader(object):
          nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,0])
          nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,1])
          nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,2])
-   
+
          nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
 
          # Transform indices into unique keys
@@ -1413,7 +1414,7 @@ class VlsvReader(object):
          globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesX)
          globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesY)
          globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesZ)
-   
+
          globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
          globalCellIndices = np.transpose(globalCellIndices)
          # Transform cell indices into unique keys
@@ -1442,7 +1443,7 @@ class VlsvReader(object):
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1)).astype(np.float32) * self.__meshes[pop].__dvx + self.__meshes[pop].__vxmin
       nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
       nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
-      
+
       # Nodekeyss is no longer needed
       del nodeKeys
 
@@ -1464,7 +1465,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
-      
+
       # Special handling for time
       if name=="time":
          if self.check_parameter(name="t"):
@@ -1478,7 +1479,7 @@ class VlsvReader(object):
 
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
-      
+
       :param cellid: Cell ID of the cell whose velocity cells the function will read
       :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
 
@@ -1503,10 +1504,10 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_blocks`
       '''
-      
+
       if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
-            self.__set_cell_offset_and_blocks(pop) 
+            self.__set_cell_offset_and_blocks(pop)
          # Check that cells has vspace
          if not cellid in self.__fileindex_for_cellid_blocks[pop]:
             print("Cell does not have velocity distribution")
@@ -1517,7 +1518,7 @@ class VlsvReader(object):
 
       else:  # Uses arrays (much faster to initialize)
          if not pop in self.__cells_with_blocks:
-            self.__set_cell_offset_and_blocks_nodict(pop) 
+            self.__set_cell_offset_and_blocks_nodict(pop)
          # Check that cells has vspace
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
@@ -1618,28 +1619,28 @@ class VlsvReader(object):
 
    def get_spatial_mesh_size(self):
       ''' Read spatial mesh size
-      
+
       :returns: Size of mesh in number of blocks, array with three elements
       '''
       return np.array([self.__xcells, self.__ycells, self.__zcells])
 
    def get_spatial_block_size(self):
       ''' Read spatial mesh block size
-      
+
       :returns: Size of block in number of cells, array with three elements
       '''
       return np.array([self.__xblock_size, self.__yblock_size, self.__zblock_size])
 
    def get_spatial_mesh_extent(self):
       ''' Read spatial mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
    def get_fsgrid_mesh_size(self):
       ''' Read fsgrid mesh size
-      
+
       :returns: Size of mesh in number of cells, array with three elements
       '''
       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
@@ -1648,35 +1649,35 @@ class VlsvReader(object):
 
    def get_fsgrid_mesh_extent(self):
       ''' Read fsgrid mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
    def get_velocity_mesh_size(self, pop="proton"):
       ''' Read velocity mesh size
-      
+
       :returns: Size of mesh in number of blocks, array with three elements
       '''
       return np.array([self.__meshes[pop].__vxblocks, self.__meshes[pop].__vyblocks, self.__meshes[pop].__vzblocks])
 
    def get_velocity_block_size(self, pop="proton"):
       ''' Read velocity mesh block size
-      
+
       :returns: Size of block in number of cells, array with three elements
       '''
       return np.array([self.__meshes[pop].__vxblock_size, self.__meshes[pop].__vyblock_size, self.__meshes[pop].__vzblock_size])
 
    def get_velocity_mesh_extent(self, pop="proton"):
       ''' Read velocity mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [vxmin, vymin, vzmin, vxmax, vymax, vzmax]
       '''
       return np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin, self.__meshes[pop].__vxmax, self.__meshes[pop].__vymax, self.__meshes[pop].__vzmax])
 
    def read_blocks(self, cellid, pop="proton"):
       ''' Read raw block data from the open file and return the data along with block ids
-      
+
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and data eg [array([2, 5, 6, 234, 21]), array([1.0e-8, 2.1e-8, 2.1e-8, 0, 4.0e-8])]
 
@@ -1771,5 +1772,3 @@ class VlsvReader(object):
          .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid = {}
-
-
