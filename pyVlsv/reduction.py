@@ -34,6 +34,7 @@ import math
 
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
+kb = 1.38065e-23
 
 def pass_op( variable ):
    # do nothing
