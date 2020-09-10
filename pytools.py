@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
@@ -53,7 +53,7 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 if os.getenv('PTNOLATEX') is None:
    matplotlib.rc('text', usetex=True)
-   matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
+   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
    matplotlib.rcParams['mathtext.fontset'] = 'stix'
    matplotlib.rcParams['font.family'] = 'STIXGeneral'
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
@@ -107,4 +107,3 @@ try:
    import miscellaneous
 except ImportError as e:
    print("Note: Did not import miscellaneous: ", e)
-
