@@ -35,6 +35,9 @@ import math
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
 kb = 1.38065e-23
+mu_0 = 1.25663706144e-6
+epsilon_0 = 8.8542e-12
+speedoflight = 2.9979e8
 
 def pass_op( variable ):
    # do nothing
@@ -135,6 +138,8 @@ def restart_V( variables ):
          V = moments[1:4]/moments[0]
       elif len(moments)==5: # multipop restart
          V = moments[1:4]
+      elif len(moments)==6: # eVlasiator restart
+         V = moments[1:4]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -143,6 +148,8 @@ def restart_V( variables ):
          rho = np.ma.masked_less_equal(moments[:,0],0)
          V = np.ma.divide(moments[:,1:4],rho[:,np.newaxis])
       elif len(moments[0,:])==5: # multipop restart
+         V = moments[:,1:4]
+      elif len(moments[0,:])==6: # eVlasiator restart
          V = moments[:,1:4]
       else:
          print("Unrecognized length for moments!")
@@ -179,6 +186,8 @@ def restart_rhom( variables ):
          rhom = moments[0]*mass
       elif len(moments)==5: # multipop restart
          rhom = moments[0]
+      elif len(moments)==6: # eVlasiator restart
+         rhom = moments[0]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -186,6 +195,8 @@ def restart_rhom( variables ):
       if len(moments[0,:])==4:  # pre-multipop restart
          rhom = moments[:,0]*mass
       elif len(moments[0,:])==5: # multipop restart
+         rhom = moments[:,0]
+      elif len(moments[0,:])==6: # eVlasiator restart
          rhom = moments[:,0]
       else:
          print("Unrecognized length for moments!")
@@ -203,6 +214,8 @@ def restart_rhoq( variables ):
          rhoq = moments[0]*charge
       elif len(moments)==5: # multipop restart
          rhoq = moments[4]
+      elif len(moments)==6: # eVlasiator restart
+         rhoq = moments[4]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -210,6 +223,8 @@ def restart_rhoq( variables ):
       if len(moments[0,:])==4:  # pre-multipop restart
          rhoq = moments[:,0]*charge
       elif len(moments[0,:])==5: # multipop restart
+         rhoq = moments[:,4]
+      elif len(moments[0,:])==6: # eVlasiator restart
          rhoq = moments[:,4]
       else:
          print("Unrecognized length for moments!")
@@ -248,7 +263,6 @@ def vms( variables ):
        input: P, rhom, B
    '''
    epsilon = sys.float_info.epsilon
-   mu_0 = 1.25663706144e-6
    P = variables[0]
    rho_m = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[1])),0)
    B = variables[2]
@@ -276,7 +290,6 @@ def va( variables ):
        input: rhom, B
    '''
    epsilon = sys.float_info.epsilon
-   mu_0 = 1.25663706144e-6
    rho_m = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
    B = variables[1]
    if np.ndim(B) == 1:
@@ -451,12 +464,11 @@ def Poynting( variables ):
    '''
    E=np.array(variables[0])
    B=np.array(variables[1])
-   return np.cross(E, B) / 1.25663706144e-6
+   return np.cross(E, B) / mu_0
 
 def Temperature( variables ):
    ''' Data reducer for converting pressure to temperature
    '''
-   kb = 1.38065e-23
    Pressure = variables[0] # either a tensor, vector, array, or value
    rho = variables[1] # eithern array or a value
    divisor = np.ma.masked_less_equal( np.ma.masked_invalid(np.array(rho)),0) * kb
@@ -510,7 +522,7 @@ def beta( variables ):
    '''
    Pressure = variables[0]
    Magneticfield = variables[1]
-   return 2.0 * 1.25663706144e-6 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
+   return 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
 
 def rMirror( variables ):
    # More efficient file access, now just takes PTensor and B
@@ -524,10 +536,9 @@ def rMirror( variables ):
 
 def thermalvelocity( variables ):
    Temperature = variables[0]
-   kb = 1.38065e-23
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    # Corrected to calculate the mean speed sqrt(8kT/pi m)
-   thermalvelocity = np.sqrt(Temperature*(kb*8./(mass*3.14159)))
+   thermalvelocity = np.sqrt(Temperature*(kb*8./(mass*math.pi)))
    return thermalvelocity
 
 def Vstream( variables ):
@@ -606,10 +617,8 @@ def ion_inertial( variables ):
    rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
-   c = 2.9979e8
-   epsilonnought = 8.8542e-12
-   omegapi = np.sqrt(rho/(mass*epsilonnought))*charge
-   di = np.ma.divide(c,omegapi)
+   omegapi = np.sqrt(rho/(mass*epsilon_0))*charge
+   di = np.ma.divide(speedoflight,omegapi)
    return di
 
 def gyroperiod( variables ):
@@ -626,8 +635,7 @@ def plasmaperiod( variables ):
    rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
-   epsilonnought = 8.8542e-12
-   omegapi = abs(np.sqrt(rho/(mass*epsilonnought))*charge)
+   omegapi = abs(np.sqrt(rho/(mass*epsilon_0))*charge)
    #return np.ma.divide(2.*math.pi,omegapi)
    return 2.*math.pi*(omegapi**-1)
 
@@ -909,6 +917,8 @@ v5reducers["vg_v_perpendicular"] =         DataReducerVariable(["vg_v", "vg_b_vo
 
 v5reducers["vg_eje_parallel"] =              DataReducerVariable(["vg_eje", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$EJE_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_eje_perpendicular"] =         DataReducerVariable(["vg_eje", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$EJE_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+v5reducers["vg_egradpe_parallel"] =              DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\parallel}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+v5reducers["vg_egradpe_perpendicular"] =         DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\perp}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 
 v5reducers["vg_pdyn"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
 v5reducers["vg_pdynx"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")

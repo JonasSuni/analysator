@@ -322,7 +322,7 @@ def plot_vdf(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
@@ -491,7 +491,7 @@ def plot_vdf(filename=None,
         # Verify directory
         if outputfile is None:
             if outputdir is None: # default initial path
-                savefigdir=os.path.expandvars('$HOME/Plots/')
+                savefigdir=pt.plot.defaultoutputdir
             else:
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
@@ -895,7 +895,7 @@ def plot_vdf(filename=None,
             pltystr = temp
             binsXY = binsXY.T
         # Boldface axis labels
-        if os.getenv('PTNOLATEX') is None:
+        if not os.getenv('PTNOLATEX'):
             pltxstr = r'\textbf{'+pltxstr+'}'
             pltystr = r'\textbf{'+pltystr+'}'
 
@@ -1003,7 +1003,7 @@ def plot_vdf(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            if os.getenv('PTNOLATEX') is None:
+            if not os.getenv('PTNOLATEX'):
                 plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
@@ -1135,7 +1135,7 @@ def plot_vdf(filename=None,
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
             # Colourbar title             
-            if os.getenv('PTNOLATEX') is not None:
+            if os.getenv('PTNOLATEX'):
                 cb_title_use.replace('\textbf{','')
                 cb_title_use.replace('\mathrm{','')
                 cb_title_use.replace('}','')
