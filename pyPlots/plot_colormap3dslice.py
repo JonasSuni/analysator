@@ -66,7 +66,7 @@ def plot_colormap3dslice(filename=None,
                   Earth=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
-                  streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0, streambox=None,
                   axes=None, cbaxes=None,
                          normal='y', cutpoint=0., cutpointre=None
                   ):
@@ -1285,8 +1285,13 @@ def plot_colormap3dslice(filename=None,
         elif xyz==2:
             U = slinemap[:,:,0]
             V = slinemap[:,:,1]
-
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
+        if type(streambox) == list:
+            xmin,xmax,ymin,ymax = streambox
+            XstrmeshXY,YstrmeshXY = np.meshgrid(np.arange(xmin,xmax,1.e6/6.371e6),np.arange(ymin,ymax,1.e6/6.371e6))
+            streamstartcoords = np.array([XstrmeshXY.flatten(),YstrmeshXY.flatten()]).T
+            ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor, start_points=streamstartcoords)
+        else:
+            ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
