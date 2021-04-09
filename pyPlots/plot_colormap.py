@@ -248,9 +248,6 @@ def plot_colormap(
 
     """
 
-    if noaxes:
-        plt.axis("off")
-
     # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
     if boxm is None:
         boxm = ([],)
@@ -1502,6 +1499,9 @@ def plot_colormap(
     if noylabels:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)
+
+    if noaxes:
+        plt.axis("off")
 
     # Adjust layout. Uses tight_layout() but in fact this ensures
     # that long titles and tick labels are still within the plot area.
