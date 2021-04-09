@@ -100,6 +100,7 @@ def plot_colormap(
     streamlinethick=1.0,
     axes=None,
     cbaxes=None,
+    noaxes=False,
 ):
 
     """ Plots a coloured plot with axes and a colour bar.
@@ -246,6 +247,9 @@ def plot_colormap(
     plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
 
     """
+
+    if noaxes:
+        plt.axis("off")
 
     # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
     if boxm is None:
