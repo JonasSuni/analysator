@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm, LogNorm, SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -39,71 +40,38 @@ from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from distutils.version import LooseVersion, StrictVersion
 
+def plot_colormap(filename=None,
+                  vlsvobj=None,
+                  filedir=None, step=None,
+                  outputdir=None, outputfile=None,
+                  nooverwrite=False,
+                  var=None, op=None, operator=None,
+                  title=None, cbtitle=None, draw=None, usesci=True,
+                  symlog=None,
+                  diff=None,
+                  boxm=None,boxre=None,colormap=None,
+                  run=None, nocb=False, internalcb=False,
+                  wmark=False, wmarkb=False,
+                  axisunit=None, thick=1.0,scale=1.0,
+                  tickinterval=0,   # Fairly certain that this is a valid null value
+                  noborder=False, noxlabels=False, noylabels=False,
+                  vmin=None, vmax=None, lin=None,
+                  external=None, expression=None, 
+                  vscale=1.0,
+                  absolute=False,
+                  symmetric=False,
+                  pass_vars=None, pass_times=None, pass_full=False,
+                  fluxfile=None, fluxdir=None,
+                  fluxthick=1.0, fluxlines=1,
+                  fsaved=None,
+                  Earth=None,
+                  highres=None,
+                  vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
+                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none',noaxes=False,
+                  ):
 
-def plot_colormap(
-    filename=None,
-    vlsvobj=None,
-    filedir=None,
-    step=None,
-    outputdir=None,
-    outputfile=None,
-    nooverwrite=False,
-    var=None,
-    op=None,
-    operator=None,
-    title=None,
-    cbtitle=None,
-    draw=None,
-    usesci=True,
-    symlog=None,
-    diff=None,
-    boxm=None,
-    boxre=None,
-    colormap=None,
-    run=None,
-    nocb=False,
-    internalcb=False,
-    wmark=False,
-    wmarkb=False,
-    axisunit=None,
-    thick=1.0,
-    scale=1.0,
-    tickinterval=0,  # Fairly certain that this is a valid null value
-    noborder=False,
-    noxlabels=False,
-    noylabels=False,
-    vmin=None,
-    vmax=None,
-    lin=None,
-    external=None,
-    expression=None,
-    vscale=1.0,
-    absolute=False,
-    symmetric=False,
-    pass_vars=None,
-    pass_times=None,
-    pass_full=False,
-    fluxfile=None,
-    fluxdir=None,
-    fluxthick=1.0,
-    fluxlines=1,
-    fsaved=None,
-    Earth=None,
-    highres=None,
-    vectors=None,
-    vectordensity=100,
-    vectorcolormap="gray",
-    vectorsize=1.0,
-    streamlines=None,
-    streamlinedensity=1,
-    streamlinecolor="white",
-    streamlinethick=1.0,
-    axes=None,
-    cbaxes=None,
-    noaxes=False,
-):
-
-    """ Plots a coloured plot with axes and a colour bar.
+    ''' Plots a coloured plot with axes and a colour bar.
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
@@ -152,7 +120,7 @@ def plot_colormap(
     :kword Earth:       If set, draws an earth at (0,0)
     :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print).
 
-    :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -222,6 +190,8 @@ def plot_colormap(
                         Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                         proportions may change if the box and axes size are not designed to match by the user
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword useimshow:   Use imshow for raster background instead (default: False)
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -246,7 +216,7 @@ def plot_colormap(
         return MA
     plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
 
-    """
+'''
 
     # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
     if boxm is None:
@@ -262,25 +232,26 @@ def plot_colormap(
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if filedir is "":
-        filedir = "./"
-    if fluxdir is "":
-        fluxdir = "./"
-    if outputdir is "":
-        outputdir = "./"
+    if (filedir == ''):
+        filedir = './'
+    if (fluxdir == ''):
+        fluxdir = './'
+    if (outputdir == ''):
+        outputdir = './'
 
     # Input file or object
     if filename:
-        f = pt.vlsvfile.VlsvReader(filename)
-    elif filedir and step is not None:
-        filename = filedir + "bulk." + str(step).rjust(7, "0") + ".vlsv"
-        f = pt.vlsvfile.VlsvReader(filename)
+        f=pt.vlsvfile.VlsvReader(filename)
+    elif (filedir and step is not None):
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj:
         f = vlsvobj
     else:
@@ -307,18 +278,18 @@ def plot_colormap(
     if fluxfile:
         if not os.path.exists(fluxfile):
             print("Error locating flux function file!")
-            fluxfile = None
-
-    if not operator:
-        if op:
-            operator = op
+            fluxfile=None
+                
+    if operator is None:
+        if op is not None:
+            operator=op
 
     if not colormap:
         # Default values
-        colormap = "hot_desaturated"
-        if operator and operator in "xyz":
-            colormap = "bwr"
-    cmapuse = matplotlib.cm.get_cmap(name=colormap)
+        colormap="hot_desaturated"
+        if operator is not None and operator in 'xyz':
+            colormap="bwr"
+    cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
     fontsize = 8 * scale  # Most text
     fontsize2 = 10 * scale  # Time title
@@ -361,9 +332,9 @@ def plot_colormap(
                 run = filename[16:19]
 
     # Verify validity of operator
-    operatorstr = ""
-    operatorfilestr = ""
-    if operator:
+    operatorstr=''
+    operatorfilestr=''
+    if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
@@ -510,8 +481,8 @@ def plot_colormap(
     ##########
     if not expression:
         # Read data from file
-        if not operator:
-            operator = "pass"
+        if operator is None:
+            operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
@@ -775,13 +746,10 @@ def plot_colormap(
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
         # Handle operators
-        if operator and (operator is not "pass") and (operator is not "magnitude"):
-            if operator == "x":
-                operator = "0"
-            if operator == "y":
-                operator = "1"
-            if operator == "z":
-                operator = "2"
+        if (operator and (operator != 'pass') and (operator != 'magnitude')):
+            if operator=='x': operator = '0'
+            if operator=='y': operator = '1'
+            if operator=='z': operator = '2'
             if not operator.isdigit():
                 print("Error parsing operator for custom expression!")
                 return
@@ -972,11 +940,11 @@ def plot_colormap(
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes:  # If axes are provided, leave backend as-is.
         if draw:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive:  #'TkAgg':
+            if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg':
                 plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not pt.backend_noninteractive:  #'Agg':
-                plt.switch_backend(pt.backend_noninteractive)
+            if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
+                plt.switch_backend(pt.backend_noninteractive)  
 
     # Select image shape to match plotted area
     boxlenx = boxcoords[1] - boxcoords[0]
@@ -1026,9 +994,17 @@ def plot_colormap(
         fig = plt.gcf()  # get current figure
 
     # Plot the actual mesh
-    fig1 = ax1.pcolormesh(
-        XmeshPass, YmeshPass, datamap, cmap=colormap, norm=norm, rasterized=True
-    )
+    if(not useimshow):
+        fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    else:
+        fig1 = ax1.imshow(datamap,
+                          cmap=colormap,
+                          norm=norm,
+                          interpolation=imshowinterp,
+                          origin='lower',
+                          extent=(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
+                         )
+    
 
     # Title and plot limits
     if len(plot_title) != 0:
@@ -1080,12 +1056,23 @@ def plot_colormap(
         )
 
         # Find inflow position values
-        cid = f.get_cellid([xmax - 2 * cellsize, 0, 0])
-        ff_b = f.read_variable("B", cellids=cid)
-        if f.check_variable("moments"):  # restart file
-            ff_v = f.read_variable("restart_V", cellids=cid)
+        if f.check_variable("B"):
+            # Old data format
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_variable("B", cellids=cid)
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("restart_V", cellids=cid)
+            else:
+                ff_v = f.read_variable("V", cellids=cid)
         else:
-            ff_v = f.read_variable("V", cellids=cid)
+            # v5 Vlasiator data
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_fsgrid_variable("fg_b")[-2, 0,0]
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("vg_restart_v", cellids=cid)
+            else:
+                ff_v = f.read_variable("vg_v", cellids=cid)
+
         # Account for movement
         outofplane = [0, -1, 0]  # For polar runs
         if zsize == 1:

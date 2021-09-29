@@ -27,10 +27,12 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm, LogNorm, SymLogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
+from matplotlib.patches import Circle, Wedge
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
@@ -38,80 +40,46 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from distutils.version import LooseVersion, StrictVersion
 import ids3d
 
+def plot_colormap3dslice(filename=None,
+                  vlsvobj=None,
+                  filedir=None, step=None, run=None,
+                  outputdir=None, outputfile=None,
+                  nooverwrite=False,
+                  var=None, op=None, operator=None,
+                  title=None, cbtitle=None, draw=None, usesci=True,
+                  symlog=None,
+                  boxm=None,boxre=None,colormap=None,
+                  nocb=False, internalcb=False,
+                  wmark=False,wmarkb=False,
+                  axisunit=None, thick=1.0,scale=1.0,
+                  tickinterval=0, # Fairly certain this is a valid null value
+                  noborder=False, noxlabels=False, noylabels=False,
+                  vmin=None, vmax=None, lin=None,
+                  external=None, expression=None,
+                  diff=None,
+                  vscale=1.0,
+                  absolute=False,
+                  symmetric=False,
+                  pass_vars=None, pass_times=None, pass_full=False,
+                  fsaved=None,
+                  Earth=None,
+                  highres=None,
+                  vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
+                  axes=None, cbaxes=None,
+                  normal='y', cutpoint=0., cutpointre=None,streambox=None,
+                  ):
 
-def plot_colormap3dslice(
-    filename=None,
-    vlsvobj=None,
-    filedir=None,
-    step=None,
-    outputdir=None,
-    outputfile=None,
-    nooverwrite=False,
-    var=None,
-    op=None,
-    operator=None,
-    title=None,
-    cbtitle=None,
-    draw=None,
-    usesci=True,
-    symlog=None,
-    boxm=None,
-    boxre=None,
-    colormap=None,
-    run=None,
-    nocb=False,
-    internalcb=False,
-    wmark=False,
-    wmarkb=False,
-    axisunit=None,
-    thick=1.0,
-    scale=1.0,
-    tickinterval=0,  # Fairly certain this is a valid null value
-    noborder=False,
-    noxlabels=False,
-    noylabels=False,
-    vmin=None,
-    vmax=None,
-    lin=None,
-    external=None,
-    expression=None,
-    diff=None,
-    vscale=1.0,
-    absolute=False,
-    symmetric=False,
-    pass_vars=None,
-    pass_times=None,
-    pass_full=False,
-    # fluxfile=None, fluxdir=None,
-    # fluxthick=1.0, fluxlines=1,
-    fsaved=None,
-    Earth=None,
-    highres=None,
-    vectors=None,
-    vectordensity=100,
-    vectorcolormap="gray",
-    vectorsize=1.0,
-    streamlines=None,
-    streamlinedensity=1,
-    streamlinecolor="white",
-    streamlinethick=1.0,
-    streambox=None,
-    axes=None,
-    cbaxes=None,
-    normal="y",
-    cutpoint=0.0,
-    cutpointre=None,
-):
-
-    """ Plots a coloured plot with axes and a colour bar.
+    ''' Plots a coloured plot with axes and a colour bar.
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
+    :kword run:         run identifier, used for constructing output filename
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
-                        forward slash, the final parti will be used as a perfix for the files.
+                        forward slash, the final part will be used as a prefix for the files.
     :kword outputfile:  Singular output file name
 
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
@@ -127,7 +95,6 @@ def plot_colormap3dslice(
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
-    :kword run:         run identifier, used for constructing output filename
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -201,10 +168,6 @@ def plot_colormap3dslice(
                         the regular source file and the file given by this keyword. This overides external
                         and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
-    :kword fluxfile:    Filename to plot fluxfunction from
-    :kword fluxdir:     Directory in which fluxfunction files can be found
-    :kword fluxthick:   Scale fluxfunction line thickness
-    :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
@@ -250,7 +213,7 @@ def plot_colormap3dslice(
         return MA
     plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
 
-    """
+    '''
 
     # Verify the location of this watermark image
     watermarkimage = os.path.join(os.path.dirname(__file__), "logo_color.png")
@@ -266,45 +229,44 @@ def plot_colormap3dslice(
         pass_vars = []
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if filedir is "":
-        filedir = "./"
-    # if (fluxdir is ''):
-    #    fluxdir = './'
-    if outputdir is "":
-        outputdir = "./"
+    if (filedir == ''):
+        filedir = './'
+    if (outputdir == ''):
+        outputdir = './'
 
     # Input file or object
     if filename:
-        f = pt.vlsvfile.VlsvReader(filename)
-    elif filedir and step is not None:
-        filename = filedir + "bulk." + str(step).rjust(7, "0") + ".vlsv"
-        f = pt.vlsvfile.VlsvReader(filename)
+        f=pt.vlsvfile.VlsvReader(filename)
+    elif (filedir and step is not None):
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj:
         f = vlsvobj
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
-
-    if not operator:
-        if op:
-            operator = op
+    
+    if operator is None:
+        if op is not None:
+            operator=op
 
     if not colormap:
         # Default values
-        colormap = "hot_desaturated"
-        if operator and operator in "xyz":
-            colormap = "bwr"
-    cmapuse = matplotlib.cm.get_cmap(name=colormap)
+        colormap="hot_desaturated"
+        if operator is not None and operator in 'xyz':
+            colormap="bwr"
+    cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
-    fontsize = 8 * scale  # Most text
-    fontsize2 = 10 * scale  # Time title
-    fontsize3 = 8 * scale  # Colour bar ticks and title
+    fontsize=8*scale # Most text
+    fontsize2=10*scale # Time title
+    fontsize3=8*scale # Colour bar ticks and title
     # Small internal colorbar needs increased font size
     if internalcb:
         fontsize3 = fontsize3 * 2
@@ -317,14 +279,11 @@ def plot_colormap3dslice(
         if timeval is None:
             plot_title = ""
         else:
-            timeformat = "{:4.1f}"
-            if title == "sec":
-                timeformat = "{:4.0f}"
-            if title == "msec":
-                timeformat = "{:4.3f}"
-            if title == "musec":
-                timeformat = "{:4.6f}"
-            plot_title = "t=" + timeformat.format(timeval) + " s"
+            timeformat='{:4.1f}'
+            if title=="sec": timeformat='{:4.0f}'
+            if title=="msec": timeformat='{:4.3f}'
+            if title=="musec": timeformat='{:4.6f}'
+            plot_title = "t="+timeformat.format(timeval)+'\,s'
     else:
         plot_title = title
 
@@ -346,21 +305,17 @@ def plot_colormap3dslice(
                 run = filename[16:19]
 
     # Verify validity of operator
-    operatorstr = ""
-    operatorfilestr = ""
-    if operator:
+    operatorstr=''
+    operatorfilestr=''
+    if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
-        if (
-            not operator in "xyz"
-            and operator is not "magnitude"
-            and not operator.isdigit()
-        ):
-            print("Unknown operator " + str(operator))
-            operator = None
-            operatorstr = ""
-        if operator in "xyz":
+        if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
+            print("Unknown operator "+str(operator))
+            operator=None
+            operatorstr=''
+        if operator in 'xyz':
             # For components, always use linear scale, unless symlog is set
             operatorstr = "_" + operator
             operatorfilestr = "_" + operator
@@ -526,36 +481,30 @@ def plot_colormap3dslice(
         sliceoffset = abs(xmin) + cutpoint
         fgslice[0] = int(sliceoffset / cellsizefg)
         xyz = 0
-        idlist, indexlist = ids3d.ids3d(
-            cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax
-        )
-        axislabels = ["Y", "Z"]
-        slicelabel = r"X={:4.1f}".format(cutpoint / Re) + " $R_\mathrm{E}\qquad $"
-        pt.plot.plot_helpers.PLANE = "YZ"
+        idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
+        axislabels = ['Y','Z']
+        slicelabel = r"X={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
+        pt.plot.plot_helpers.PLANE = 'YZ'
     if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
         simext = [xmin, xmax, zmin, zmax]
         sizes = [xsize, zsize]
         sliceoffset = abs(ymin) + cutpoint
         fgslice[1] = int(sliceoffset / cellsizefg)
         xyz = 1
-        idlist, indexlist = ids3d.ids3d(
-            cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax
-        )
-        axislabels = ["X", "Z"]
-        slicelabel = r"Y={:4.1f}".format(cutpoint / Re) + " $R_\mathrm{E}\qquad $"
-        pt.plot.plot_helpers.PLANE = "XZ"
+        idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
+        axislabels = ['X','Z']
+        slicelabel = r"Y={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
+        pt.plot.plot_helpers.PLANE = 'XZ'
     if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
         simext = [xmin, xmax, ymin, ymax]
         sizes = [xsize, ysize]
         sliceoffset = abs(zmin) + cutpoint
         fgslice[2] = int(sliceoffset / cellsizefg)
         xyz = 2
-        idlist, indexlist = ids3d.ids3d(
-            cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax
-        )
-        axislabels = ["X", "Y"]
-        slicelabel = r"Z={:4.1f}".format(cutpoint / Re) + " $R_\mathrm{E}\qquad $"
-        pt.plot.plot_helpers.PLANE = "XY"
+        idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
+        axislabels = ['X','Y']
+        slicelabel = r"Z={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
+        pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
     if len(boxm) == 4:
@@ -566,23 +515,22 @@ def plot_colormap3dslice(
         boxcoords = list(simext)
 
     # If box extents were provided manually, truncate to simulation extents
-    # Also subtract one reflevel0-cell in each direction to hide boundary cells
-    boxcoords[0] = max(boxcoords[0], simext[0] + cellsize)
-    boxcoords[1] = min(boxcoords[1], simext[1] - cellsize)
-    boxcoords[2] = max(boxcoords[2], simext[2] + cellsize)
-    boxcoords[3] = min(boxcoords[3], simext[3] - cellsize)
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
 
     # Axes and units (default R_E)
-    if axisunit is not None:  # Use m or km or other
-        if np.isclose(axisunit, 0):
-            axisunitstr = r"m"
-        elif np.isclose(axisunit, 3):
-            axisunitstr = r"km"
+    if axisunit is not None: # Use m or km or other
+        if np.isclose(axisunit,0):
+            axisunitstr = pt.plot.rmstring('m')
+        elif np.isclose(axisunit,3):
+            axisunitstr = pt.plot.rmstring('km')
         else:
-            axisunitstr = r"$10^{" + str(int(axisunit)) + "}$ m"
-        axisunit = np.power(10, int(axisunit))
+            axisunitstr = r'$10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
+        axisunit = np.power(10,int(axisunit))
     else:
-        axisunitstr = r"$\mathrm{R}_{\mathrm{E}}$"
+        axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         axisunit = Re
 
     # Scale data extent and plot box
@@ -596,7 +544,7 @@ def plot_colormap3dslice(
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    elif f.check_variable("proton/vg_rho"):
+    elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
         print("error!")
@@ -606,13 +554,14 @@ def plot_colormap3dslice(
     rhomap = rhomap[indexlist]  # find required cells
     # Create the plotting grid
     rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
+
     ############################################
     # Read data and calculate required variables
     ############################################
     if not expression:
         # Read data from file
-        if not operator:
-            operator = "pass"
+        if operator is None:
+            operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
@@ -774,9 +723,9 @@ def plot_colormap3dslice(
     if reqvariables:
         try:
             for i in reqvariables:
-                if i is "3d":
+                if i == "3d":
                     pass3d = True
-                elif i is "noupscale":
+                elif i == "noupscale":
                     meshReflevel = 0
                 elif not (i in pass_vars):
                     pass_vars.append(i)
@@ -1102,13 +1051,13 @@ def plot_colormap3dslice(
                     datamap = datamap[:, MaskY[0] : MaskY[-1] + 1, :, :]
         # Handle operators
 
-        if operator and (operator is not "pass") and (operator is not "magnitude"):
-            if operator == "x":
-                operator = "0"
-            if operator == "y":
-                operator = "1"
-            if operator == "z":
-                operator = "2"
+        if (operator and (operator != 'pass') and (operator != 'magnitude')):
+            if operator=='x': 
+                operator = '0'
+            if operator=='y': 
+                operator = '1'
+            if operator=='z': 
+                operator = '2'
             if not operator.isdigit():
                 print("Error parsing operator for custom expression!")
                 return
@@ -1233,18 +1182,10 @@ def plot_colormap3dslice(
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
-                norm = SymLogNorm(
-                    linthresh=linthresh,
-                    linscale=1.0,
-                    vmin=vminuse,
-                    vmax=vmaxuse,
-                    clip=True,
-                )
-                print(
-                    "WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10."
-                )
-                # TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+                norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(
                     base=10,
@@ -1276,11 +1217,11 @@ def plot_colormap3dslice(
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes:  # If axes are provided, leave backend as-is.
         if draw:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive:  #'TkAgg':
+            if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg': 
                 plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not pt.backend_noninteractive:  #'Agg':
-                plt.switch_backend(pt.backend_noninteractive)
+            if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
+                plt.switch_backend(pt.backend_noninteractive)  
 
     # Select image shape to match plotted area
     boxlenx = boxcoords[1] - boxcoords[0]
@@ -1311,15 +1252,14 @@ def plot_colormap3dslice(
             highresscale = float(highres)
             if np.isclose(highresscale, 1.0):
                 highresscale = 2
-        figsize = [x * highresscale for x in figsize]
-        fontsize = fontsize * highresscale
-        fontsize2 = fontsize2 * highresscale
-        fontsize3 = fontsize3 * highresscale
-        scale = scale * highresscale
-        thick = thick * highresscale
-        fluxthick = fluxthick * highresscale
-        streamlinethick = streamlinethick * highresscale
-        vectorsize = vectorsize * highresscale
+        figsize= [x * highresscale for x in figsize]
+        fontsize=fontsize*highresscale
+        fontsize2=fontsize2*highresscale
+        fontsize3=fontsize3*highresscale
+        scale=scale*highresscale
+        thick=thick*highresscale
+        streamlinethick=streamlinethick*highresscale
+        vectorsize=vectorsize*highresscale
 
     if not axes:
         # Create 300 dpi image of suitable size
@@ -1351,11 +1291,8 @@ def plot_colormap3dslice(
     # ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if not noxlabels:
-        if not os.getenv("PTNOLATEX"):
-            xlabelstr = r"\textbf{" + axislabels[0] + " [" + axisunitstr + "]}"
-        else:
-            xlabelstr = r"" + axislabels[0] + " [" + axisunitstr + "]"
-        ax1.set_xlabel(xlabelstr, fontsize=fontsize, weight="black")
+        xlabelstr = pt.plot.mathmode(pt.plot.bfstring(axislabels[0]+'\,['+axisunitstr+']'))
+        ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
             item.set_fontweight("black")
@@ -1363,11 +1300,8 @@ def plot_colormap3dslice(
             fontsize
         )  # set axis exponent offset font sizes
     if not noylabels:
-        if not os.getenv("PTNOLATEX"):
-            ylabelstr = r"\textbf{" + axislabels[1] + " [" + axisunitstr + "]}"
-        else:
-            ylabelstr = r"" + axislabels[1] + " [" + axisunitstr + "]"
-        ax1.set_ylabel(ylabelstr, fontsize=fontsize, weight="black")
+        ylabelstr = pt.plot.mathmode(pt.plot.bfstring(axislabels[1]+'\,['+axisunitstr+']'))
+        ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
             item.set_fontweight("black")
@@ -1630,13 +1564,8 @@ def plot_colormap3dslice(
             horalign = "left"
 
         # Colourbar title
-        if len(cb_title_use) != 0:
-            if os.getenv("PTNOLATEX"):
-                cb_title_use.replace("\textbf{", "")
-                cb_title_use.replace("\mathrm{", "")
-                cb_title_use.replace("}", "")
-            else:
-                cb_title_use = r"\textbf{" + cb_title_use + "}"
+        if len(cb_title_use)!=0:
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
         # Set flag which affects colorbar decimal precision
         if lin is None:
