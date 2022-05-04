@@ -1517,3 +1517,5 @@ def plot_colormap(filename=None,
         # Draw on-screen
         plt.draw()
         plt.show()
+
+    plt.close(fig)
