@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-''' The plot module has all the functions related to plotting variables.
+""" The plot module has all the functions related to plotting variables.
 
    .. code-block:: python
 
@@ -30,7 +30,7 @@
       pt.pt.
       #press [tab] -> get the functions
 
-'''
+"""
 
 from plot_variables import plot_variables, plot_multiple_variables
 
@@ -51,23 +51,27 @@ import numpy as np, os
 
 
 if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
-    plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-    plt.register_cmap(name='viridis_r', cmap=cmaps.viridis_r)
-    plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-    plt.register_cmap(name='plasma_r', cmap=cmaps.plasma_r)
-    plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-    plt.register_cmap(name='inferno_r', cmap=cmaps.inferno_r)
-    plt.register_cmap(name='magma', cmap=cmaps.magma)
-    plt.register_cmap(name='magma_r', cmap=cmaps.magma_r)
+    plt.register_cmap(name="viridis", cmap=cmaps.viridis)
+    plt.register_cmap(name="viridis_r", cmap=cmaps.viridis_r)
+    plt.register_cmap(name="plasma", cmap=cmaps.plasma)
+    plt.register_cmap(name="plasma_r", cmap=cmaps.plasma_r)
+    plt.register_cmap(name="inferno", cmap=cmaps.inferno)
+    plt.register_cmap(name="inferno_r", cmap=cmaps.inferno_r)
+    plt.register_cmap(name="magma", cmap=cmaps.magma)
+    plt.register_cmap(name="magma_r", cmap=cmaps.magma_r)
 
 # Register custom colourmaps
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+plt.register_cmap(name="parula", cmap=cmaps.parula)
+plt.register_cmap(name="parula_r", cmap=cmaps.parula_r)
+plt.register_cmap(name="hot_desaturated", cmap=cmaps.hot_desaturated_colormap)
+plt.register_cmap(
+    name="hot_desaturated_r", cmap=cmaps.hot_desaturated_colormap_r
+)  # Listed colormap requires making reversed version at earlier step
+plt.register_cmap(name="pale_desaturated", cmap=cmaps.pale_desaturated_colormap)
+plt.register_cmap(
+    name="pale_desaturated_r", cmap=cmaps.pale_desaturated_colormap_r
+)  # Listed colormap requires making reversed version at earlier step
+plt.register_cmap(name="warhol", cmap=cmaps.warhol_colormap)
 
 
 decimalprecision_ax = 0
@@ -75,111 +79,122 @@ decimalprecision_cblin = 0
 cb_linear = False
 
 # Output matplotlib version
-print("Using matplotlib version "+matplotlib.__version__)
+print("Using matplotlib version " + matplotlib.__version__)
 
 # Default output directory for plots
-defaultoutputdir=os.path.expandvars('$HOME/Plots/')
-if os.getenv('PTOUTPUTDIR'):
-    defaultoutputdir=os.getenv('PTOUTPUTDIR')
+defaultoutputdir = os.path.expandvars("$HOME/Plots/")
+if os.getenv("PTOUTPUTDIR"):
+    defaultoutputdir = os.getenv("PTOUTPUTDIR")
 
 # axisfmt replaces minus sign with en-dash to fix bug with latex descender value return
 # nb: axis ticks are never plotted with scientific format
 def axisfmt(x, pos):
-    f = r'{:.'+decimalprecision_ax+r'f}'
-    if not os.getenv('PTNOLATEX'):
+    f = r"{:." + decimalprecision_ax + r"f}"
+    if not os.getenv("PTNOLATEX"):
         a = f.format(abs(x))
-        if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-        return r'$'+a+'$'
+        if np.sign(x) < 0:
+            a = r"\mbox{\textbf{--}}" + a
+        return r"$" + a + "$"
     else:
         return f.format(x)
+
 
 # cbfmtsci replaces minus sign with en-dash to fix bug with latex descender value return
 # Scientific format for colour bar ticks
 def cbfmtsci(x, pos):
-    if (cb_linear is True):
+    if cb_linear is True:
         # for linear, use more precision
-        a, b = ('{:.'+str(int(decimalprecision_cblin))+'e}').format(x).split('e')
+        a, b = ("{:." + str(int(decimalprecision_cblin)) + "e}").format(x).split("e")
         precisionvalue = int(decimalprecision_cblin)
         if int(b) < 0:
             precisionvalue += int(b)
-        if abs(precisionvalue)<1:
-            precisionvalue=1
-        f = '{:.' + str(abs(precisionvalue)) + 'f}'
-        number = f.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
+        if abs(precisionvalue) < 1:
+            precisionvalue = 1
+        f = "{:." + str(abs(precisionvalue)) + "f}"
+        number = f.format(abs(float(a))) + r"{\times}" + "10^{{{}}}".format(int(b))
     else:
-        a, b = '{:.1e}'.format(x).split('e')
-        number = '{:.1f}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
-    signchar=r''
+        a, b = "{:.1e}".format(x).split("e")
+        number = (
+            "{:.1f}".format(abs(float(a))) + r"{\times}" + "10^{{{}}}".format(int(b))
+        )
+    signchar = r""
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
-    if not os.getenv('PTNOLATEX'):
+    if not os.getenv("PTNOLATEX"):
         # replaces minus sign with en-dash to fix big with latex descender value return
-        if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
+        if np.sign(x) < 0:
+            signchar = r"\mbox{\textbf{--}}"
     else:
-        if np.sign(x)<0: signchar=r'-'
+        if np.sign(x) < 0:
+            signchar = r"-"
     # Final special treatment for zero value
-    if x==0:
-        number = r'0.0{\times}10^{{{0}}}'
-    return r'$'+signchar+number+'$'
+    if x == 0:
+        number = r"0.0{\times}10^{{{0}}}"
+    return r"$" + signchar + number + "$"
+
 
 # cbfmt replaces minus sign with en-dash to fix bug with latex descender value return, used for colorbar
 # nb: regular floating i.e. non-scientific format for colorbar ticks
 def cbfmt(x, pos):
     # Special treatment for zero value
-    if x==0:
-        return r'$0.0$'
+    if x == 0:
+        return r"$0.0$"
     # Set required decimal precision
-    a, b = '{:.1e}'.format(x).split('e')
+    a, b = "{:.1e}".format(x).split("e")
     # e.g. 9.0e-1 means we need precision 1
-    if (cb_linear is True):
+    if cb_linear is True:
         # for linear, use more precision
         precision = str(int(decimalprecision_cblin))
-        #if int(b)<1: precision = str(1+abs(int(b)))
+        # if int(b)<1: precision = str(1+abs(int(b)))
     else:
-        precision = '0'
-        if int(b)<1: precision = str(abs(int(b)))
-    f = r'{:.'+precision+'f}'
-    if not os.getenv('PTNOLATEX'):
+        precision = "0"
+        if int(b) < 1:
+            precision = str(abs(int(b)))
+    f = r"{:." + precision + "f}"
+    if not os.getenv("PTNOLATEX"):
         a = f.format(abs(x))
-        if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-        return r'$'+a+'$'
+        if np.sign(x) < 0:
+            a = r"\mbox{\textbf{--}}" + a
+        return r"$" + a + "$"
     else:
         return f.format(x)
 
 
 # Helper routines for latex output handling
 def bfstring(string):
-    if not os.getenv('PTNOLATEX'):
-        if len(string)==0:
-            return ''
+    if not os.getenv("PTNOLATEX"):
+        if len(string) == 0:
+            return ""
         else:
-            return r'\mathbf{'+string+'}'
+            return r"\mathbf{" + string + "}"
     # LaTeX output off
     return string
 
+
 def rmstring(string):
-    if len(string)==0:
-        return ''
+    if len(string) == 0:
+        return ""
     else:
-        return r'\mathrm{'+string+'}'
+        return r"\mathrm{" + string + "}"
+
 
 def mathmode(string):
-    if len(string)==0:
-        return ''
+    if len(string) == 0:
+        return ""
     else:
         # First remove any internal possible dollar signs, then wrap whole string into math block
-        result = string.replace('$','')
-        if os.getenv('PTNOLATEX'):
+        result = string.replace("$", "")
+        if os.getenv("PTNOLATEX"):
             # Get rid of latex spaces
-            result = result.replace('\,','~').replace('\qquad','~~~~~~')
-        return r"$"+result+"$"
+            result = result.replace("\,", "~").replace("\qquad", "~~~~~~")
+        return r"$" + result + "$"
+
 
 def textbfstring(string):
-    if not os.getenv('PTNOLATEX'):
-        if len(string)==0:
-            return ''
+    if not os.getenv("PTNOLATEX"):
+        if len(string) == 0:
+            return ""
         else:
-            return r'\textbf{'+string+'}'
+            return r"\textbf{" + string + "}"
     # LaTex output off
     return string
-<<<<<<< HEAD
