@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys, math
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -38,22 +39,6 @@ from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
-
-# Register custom colourmaps
-plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
-plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
-plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
-plt.register_cmap(name='magma', cmap=cmaps.magma)
-plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
-# plt.register_cmap(name='cork',cmap=cork_map)
-# plt.register_cmap(name='davos_r',cmap=davos_r_map)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
@@ -81,30 +66,42 @@ def verifyCellWithVspace(vlsvReader,cid):
 # create three 1-dimensional profiles
 def doProfiles(f,VX,VY,Voutofslice,slicethick):
     # Select cells which are within slice area
-    indexes1 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
-    indexes2 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VX) <= 0.5*slicethick)])[0]
-    indexes3 = np.array([(abs(VX) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
+    indexes1 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
+    indexes2 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VX < 0.5*slicethick) & (VX >= -0.5*slicethick)])[0]
+    indexes3 = np.array([(VX < 0.5*slicethick) & (VX >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
     
     bins1=bins2=bins3=axis1=axis2=axis3=[]
     if np.any(indexes1):
-        axis1 = VX[indexes1]
-        order1 = axis1.argsort()
-        bins1 = f[indexes1][order1]
-        axis1 = axis1[order1]
+        inax1 = VX[indexes1]
+        range1a = np.amin(inax1)
+        range1b = np.amax(inax1)+slicethick
+        nbins1 = int((range1b-range1a)/slicethick)
+        bins1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b], weights=f[indexes1])
+        nums1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b])
+        nonzero = np.where(nums1 != 0)
+        bins1[nonzero] = np.divide(bins1[nonzero],nums1[nonzero])
 
     if np.any(indexes2):
-        axis2 = VY[indexes2]
-        order2 = axis2.argsort()
-        bins2 = f[indexes2][order2]
-        axis2 = axis2[order2]
+        inax2 = VY[indexes2]
+        range2a = np.amin(inax2)
+        range2b = np.amax(inax2)+slicethick
+        nbins2 = int((range2b-range2a)/slicethick)
+        bins2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b], weights=f[indexes2])
+        nums2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b])
+        nonzero = np.where(nums2 != 0)
+        bins2[nonzero] = np.divide(bins2[nonzero],nums2[nonzero])
 
     if np.any(indexes3):
-        axis3 = Voutofslice[indexes3]
-        order3 = axis3.argsort()
-        bins3 = f[indexes3][order3]
-        axis3 = axis3[order3]
+        inax3 = Voutofslice[indexes3]
+        range3a = np.amin(inax3)
+        range3b = np.amax(inax3)+slicethick
+        nbins3 = int((range3b-range3a)/slicethick)
+        bins3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b], weights=f[indexes3])
+        nums3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b])
+        nonzero = np.where(nums3 != 0)
+        bins3[nonzero] = np.divide(bins3[nonzero],nums3[nonzero])
 
-    return (bins1,bins2,bins3,axis1,axis2,axis3)
+    return (bins1,bins2,bins3,axis1[:-1],axis2[:-1],axis3[:-1])
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton", 
@@ -122,10 +119,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     vxsize = int(vxsize)
     vysize = int(vysize)
     vzsize = int(vzsize)
-    # Account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
     print("Input velocity grid cell size "+str(inputcellsize))
@@ -188,8 +188,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     rotminz=np.amin(sbrot[:,2])
     rotmaxz=np.amax(sbrot[:,2])
     gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-#    if gridratio > 1.0:  # adds a 5% margin to slice thickness
-    gridratio = 1.05*gridratio
+    if gridratio > 1.0:  # adds a 5% margin to slice thickness
+        gridratio = 1.05*gridratio
     slicethick=inputcellsize*gridratio
 
     if slicetype=="xy":
@@ -274,13 +274,13 @@ def plot_vdf_profiles(filename=None,
              axes=None
              ):
 
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots vdf values along axis-aligned lines (see axis definitions).
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
@@ -367,7 +367,8 @@ def plot_vdf_profiles(filename=None,
     elif vlsvobj!=None:
         vlsvReader=vlsvobj
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
@@ -417,7 +418,7 @@ def plot_vdf_profiles(filename=None,
         # Verify directory
         if outputfile==None:
             if outputdir==None: # default initial path
-                savefigdir=os.path.expandvars('$HOME/Plots/')
+                savefigdir=pt.plot.defaultoutputdir
             else:
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
@@ -477,10 +478,13 @@ def plot_vdf_profiles(filename=None,
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
-    # account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
 
     Re = 6.371e+6 # Earth radius in m
     # unit of velocity
@@ -848,7 +852,7 @@ def plot_vdf_profiles(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            if os.getenv('PTNOLATEX') is None:
+            if not os.getenv('PTNOLATEX'):
                 plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
@@ -888,7 +892,7 @@ def plot_vdf_profiles(filename=None,
         if True:
             #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
             #plt.yticks(fontsize=fontsize,fontweight='black')
-            if os.getenv('PTNOLATEX') is None:
+            if not os.getenv('PTNOLATEX'):
                 ylabelstr = r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
             else:
                 ylabelstr = r"$f(v)\,[m^{-6} s^{3}]$"
