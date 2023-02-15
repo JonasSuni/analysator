@@ -23,7 +23,7 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
-#import pytools
+import pytools
 from numbers import Number
 
 class VariableInfo:
