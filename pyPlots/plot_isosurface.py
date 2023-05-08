@@ -45,9 +45,13 @@ from matplotlib.cbook import get_sample_data
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
+matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
+matplotlib.rcParams['mathtext.fontset'] = 'custom'
+matplotlib.rcParams['mathtext.rm'] = 'Helvetica'
+matplotlib.rcParams['mathtext.it'] = 'Helvetica:italic'
+matplotlib.rcParams['mathtext.bf'] = 'Helvetica:bold'
+matplotlib.rcParams['font.family'] = 'sans-serif'
+matplotlib.rcParams['font.sans-serif'] = 'Helvetica'
 # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 #matplotlib.rcParams['font.family'] = 'serif'
 #matplotlib.rcParams['font.serif'] = 'cmmib10' #'cm' 
