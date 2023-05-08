@@ -1807,6 +1807,33 @@ class VlsvReader(object):
           if AMR_count == refmax + 1:
               raise Exception('CellID does not exist in any AMR level')
    
+   def get_cell_coordinates_multi(self, cellid):
+      ''' Returns a given cell's coordinates as a numpy array
+      :param cellid:            The cell's ID
+      :returns: a numpy array with the coordinates
+      .. seealso:: :func:`get_cellid`
+      .. note:: The cell ids go from 1 .. max not from 0
+      '''
+
+      cellid = np.asarray(cellid)
+
+      # Get cell lengths:
+      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
+      # Get cell indices:
+      cellid = (cellid - 1).astype(int)
+      cellindices = np.zeros((3,cellid.size))
+      cellindices[0] = (cellid%(int)(self.__xcells)).astype(int)
+      cellindices[1] = ((cellid/(int)(self.__xcells))%(int)(self.__ycells)).astype(int)
+      cellindices[2] = (cellid/(int)(self.__xcells*self.__ycells)).astype(int)
+
+      # Get cell coordinates:
+      cellcoordinates = np.zeros((3,cellid.size))
+      cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
+      cellcoordinates[1] = self.__ymin + (cellindices[1] + 0.5) * cell_lengths[1]
+      cellcoordinates[2] = self.__zmin + (cellindices[2] + 0.5) * cell_lengths[2]
+      # Return the coordinates:
+      return cellcoordinates.T
+
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
