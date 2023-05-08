@@ -59,6 +59,7 @@ if not os.getenv('PTNOLATEX'):
    matplotlib.rcParams['mathtext.rm'] = 'Helvetica'
    matplotlib.rcParams['mathtext.it'] = 'Helvetica:italic'
    matplotlib.rcParams['mathtext.bf'] = 'Helvetica:bold'
+   matplotlib.rcParams['mathtext.fallback'] = 'Helvetica'
    matplotlib.rcParams['font.family'] = 'sans-serif'
    matplotlib.rcParams['font.sans-serif'] = 'Helvetica'
    print("Using LaTeX formatting")
