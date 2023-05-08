@@ -765,6 +765,13 @@ def vg_dx(variables, reader):
    cellids = variables[0]
    return reader.get_cell_dx(cellids)
 
+def core_heating( variables ):
+    pr_rhonbs = variables[0]
+    pr_PTDNBS = variables[1]
+    pr_pressurenbs = (1.0/3.0) * (pr_PTDNBS.sum(-1))
+    pr_TNBS = pr_pressurenbs/ ((pr_rhonbs + 1.e-10) * kb)
+    return pr_TNBS
+
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
