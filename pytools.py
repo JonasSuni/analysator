@@ -54,8 +54,12 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 if not os.getenv('PTNOLATEX'):
    matplotlib.rc('text', usetex=True)
    matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-   matplotlib.rcParams['mathtext.fontset'] = 'stix'
-   matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   matplotlib.rcParams['mathtext.fontset'] = 'custom'
+   matplotlib.rcParams['mathtext.rm'] = 'Helvetica'
+   matplotlib.rcParams['mathtext.it'] = 'Helvetica:italic'
+   matplotlib.rcParams['mathtext.bf'] = 'Helvetica:bold'
+   matplotlib.rcParams['font.family'] = 'sans-serif'
+   matplotlib.rcParams['font.sans-serif'] = 'Helvetica'
    print("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
