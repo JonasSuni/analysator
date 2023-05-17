@@ -1186,3 +1186,5 @@ multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
+
+multipopv5reducers["pop/vg_mmsx"] =                    DataReducerVariable(["pop/vg_v", "vg_vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms,x}$",latexunits=r"")
