@@ -1188,3 +1188,4 @@ multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 
 multipopv5reducers["pop/vg_mmsx"] =                    DataReducerVariable(["pop/vg_v", "vg_vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms,x}$",latexunits=r"")
+datareducers["pop/vg_core_heating"] =          DataReducerVariable(["proton/vg_rho_thermal", "proton/vg_ptensor_thermal_diagonal"], core_heating, "K", 1, latex=r"$T_\mathrm{core}$", latexunits=r"K")
