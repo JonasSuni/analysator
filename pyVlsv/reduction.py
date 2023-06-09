@@ -772,6 +772,12 @@ def core_heating( variables ):
     pr_TNBS = pr_pressurenbs/ ((pr_rhonbs + 1.e-10) * kb)
     return pr_TNBS
 
+def beta_star( variables ):
+   pth = variables[0]
+   pdyn = variables[1]
+   magf = variables[2]
+   return 2.0 * mu_0 * np.ma.divide(pth+pdyn, np.sum(np.asarray(magf)**2,axis=-1))
+
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
@@ -1189,3 +1195,5 @@ multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/
 
 multipopv5reducers["pop/vg_mmsx"] =                    DataReducerVariable(["pop/vg_v", "vg_vms"], Mmsx, "", 1, latex=r"$M_\mathrm{ms,x}$",latexunits=r"")
 multipopv5reducers["pop/vg_core_heating"] =          DataReducerVariable(["proton/vg_rho_thermal", "proton/vg_ptensor_thermal_diagonal"], core_heating, "K", 1, latex=r"$T_\mathrm{core}$", latexunits=r"K")
+
+multipopv5reducers["pop/vg_beta_star"] = DataReducerVariable(["pop/vg_pressure","pop/vg_pdyn","vg_b_vol"],beta_star,"", 1, latex=r"$\beta^*_\mathrm{REPLACEPOP}$", latexunits=r"")
