@@ -59,11 +59,11 @@ def energy_spectrum_jetstyle(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=
 
     # Get velocity data
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=pop)
 
     # check that velocity space has cells
     if(len(velcells) > 0):
-        f = np.asarray(velcells.values())
+        f = np.asarray(list(velcells.values()))
     else:
         print('Velocity space cells empty!')
         return (False,0,0)
@@ -176,11 +176,11 @@ def energy_spectrum(vlsvReader, cid, pop, emin, emax, enum=10, fluxout=False, pl
 
     # Get velocity data
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=pop)
 
     # check that velocity space has cells
     if(len(velcells) > 0):
-        f = np.asarray(velcells.values())
+        f = np.asarray(list(velcells.values()))
     else:
         print('Velocity space cells empty!')
         return (False,0,0)
