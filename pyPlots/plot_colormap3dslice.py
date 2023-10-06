@@ -237,6 +237,8 @@ def plot_colormap3dslice(filename=None,
     # Change certain falsy values:
     if not lin and lin != 0:
         lin = None
+    if lin is True:
+        lin = 7
     if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
@@ -289,7 +291,7 @@ def plot_colormap3dslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+'\,s'
+            plot_title = "t="+timeformat.format(timeval)+'\,'+pt.plot.rmstring('s')
     else:
         plot_title = title
 
@@ -326,7 +328,7 @@ def plot_colormap3dslice(filename=None,
             operatorstr = "_" + operator
             operatorfilestr = "_" + operator
             if symlog is None:
-                lin = True
+                lin=7
         # index a vector
         if operator.isdigit():
             operator = str(operator)
@@ -1153,6 +1155,8 @@ def plot_colormap3dslice(filename=None,
             else:
                 # Mask datamap
                 datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        XYmask = np.full(rhomap.shape, False)
 
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -1238,7 +1242,7 @@ def plot_colormap3dslice(filename=None,
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse, vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse, vmaxuse, num=7)
+        ticks = np.linspace(vminuse,vmaxuse,num=lin)            
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes:  # If axes are provided, leave backend as-is.
