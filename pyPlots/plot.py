@@ -46,6 +46,7 @@ from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
 from plot_ionosphere import plot_ionosphere
+from plot_energy import energy_spectrum_jetstyle
 
 try:
     from plot_isosurface import plot_isosurface, plot_neutral_sheet
