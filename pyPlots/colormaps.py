@@ -12,6 +12,17 @@
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
+from matplotlib import __version__ as mpl_version
+from matplotlib.colors import LinearSegmentedColormap
+from packaging.version import Version
+import glob,os
+import numpy as np
+import matplotlib.pyplot as plt
+
+if Version(mpl_version) > Version("3.5.0"):
+    from matplotlib import colormaps as mcm
+
+
 __all__ = ['magma', 'inferno', 'plasma', 'viridis']
 
 _magma_data = [[0.001462, 0.000466, 0.013866],
@@ -1299,7 +1310,6 @@ _parula_data = [[0.2422, 0.1504, 0.6603],
                 [0.9749, 0.9782, 0.0872],
                 [0.9769, 0.9839, 0.0805]]
 
-from matplotlib.colors import LinearSegmentedColormap
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('magma_r', _magma_data[::-1]),
@@ -1345,17 +1355,18 @@ warhol_colormap = LinearSegmentedColormap("warhol",warhol_cdict)
 
 
 #Read in Scientific Colormaps 7 from subdirectory
-import glob,os
-import numpy as np
-import matplotlib.pyplot as plt
+
 (_fpath, _thisfile) = os.path.split(os.path.abspath(__file__))
 
-_SCMfiles = glob.glob(_fpath+"/SCM7/*.txt")
+_SCMfiles = glob.glob(_fpath+"/SCM8/*.txt")
 for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
-    plt.register_cmap(cmap=_cm)
-    plt.register_cmap(cmap=_cm.reversed())
-
+    if Version(mpl_version) > Version("3.5.0"):
+        mcm.register(_cm)
+        mcm.register(_cm.reversed())
+    else:
+        plt.register_cmap(cmap=_cm)
+        plt.register_cmap(cmap=_cm.reversed())

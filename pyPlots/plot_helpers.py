@@ -42,6 +42,8 @@ def inplane(inputarray):
         inputarray[:,:,2] = np.zeros(inputarray[:,:,2].shape)
     elif PLANE=='XZ':
         inputarray[:,:,1] = np.zeros(inputarray[:,:,1].shape)
+    elif PLANE=='YZ':
+        inputarray[:,:,0] = np.zeros(inputarray[:,:,0].shape)
     else:
         print("Error defining plane!")
         return -1
@@ -50,9 +52,11 @@ def inplane(inputarray):
 def inplanevec(inputarray):
     # Assumes input array is of format [nx,ny,3]
     if PLANE=='XY':
-        return inputarray[:,:,0:1]
+        return inputarray[:,:,0:2]
     elif PLANE=='XZ':
         return inputarray[:,:,0:3:2]
+    elif PLANE=='YZ':
+        return inputarray[:,:,1:3]
     else:
         print("Error defining plane!")
         return -1
@@ -69,6 +73,10 @@ def numjacobian(inputarray):
         jac[:,:,0,0], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
         jac[:,:,1,0], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
         jac[:,:,2,0], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
+    elif PLANE=='YZ':
+        jac[:,:,0,1], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
+        jac[:,:,1,1], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
+        jac[:,:,2,1], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -99,6 +107,8 @@ def numgradscalar(inputarray):
         grad[:,:,0],grad[:,:,1] = np.gradient(inputarray, CELLSIZE)
     elif PLANE=='XZ':
         grad[:,:,0],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
+    elif PLANE=='YZ':
+        grad[:,:,1],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -262,6 +272,10 @@ def numcurllimited(inputarray):
         jac[:, :, 0, 0], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
         jac[:, :, 1, 0], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
         jac[:, :, 2, 0], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
+    elif PLANE == 'YZ':
+        jac[:, :, 0, 1], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
+        jac[:, :, 1, 1], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
+        jac[:, :, 2, 1], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -361,7 +375,7 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
     # Calculates the magnitude of the perpendicular vector component
     # of each inputvector to each directionvector.
-    dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
+    dirnorm = np.ma.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
     # paravector = dirnorm
     # for i in np.arange(len(inputvector[:,0,0])):
@@ -439,13 +453,12 @@ def vec_currentdensity_lim(inputarray):
     # Output array is of format [nx,ny,3]
     return numcurllimited(inputarray) / mu0
 
-def vec_Hallterm(currentdensity, magneticfield, numberdensity):
+def vec_Hallterm(currentdensity, magneticfield, chargedensity):
     # assumes current density of shape [nx,ny,3]
     # assumes Magnetic field of shape [nx,ny,3]
-    # assumes number density of shape [nx,ny]
-    unitcharge = 1.602177e-19
+    # assumes charge density of shape [nx,ny]
     crossp = np.cross(currentdensity, magneticfield)
-    chargedensity = np.ma.masked_less_equal(numberdensity, 0) * unitcharge
+    chargedensity = np.ma.masked_less_equal(chargedensity, 0) # ions only
     # Output array is of format [nx,ny,3]
     return np.ma.divide(crossp, chargedensity[:,:,np.newaxis])
 
@@ -462,6 +475,23 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
+
+def expr_timeavg(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return []
+    # Select first found variable
+    listofkeys = iter(pass_maps[0])
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+    ntimes = len(pass_maps)
+    thismap = thesemaps[var]
+    avgmap = np.zeros(np.array(thismap.shape))
+    for i in range(ntimes):
+        avgmap = np.add(avgmap, pass_maps[i][var])
+    avgmap = np.divide(np.ma.masked_less_equal(avgmap,0), np.array([ntimes]))
+    return avgmap
+
 def expr_Diff(pass_maps, requestvariables=False):
     if requestvariables==True:
         return []
@@ -483,20 +513,29 @@ def expr_Diff(pass_maps, requestvariables=False):
 
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # charge density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return np.swapaxes(Hallterm, 0,1)
+
+def expr_Hall_lim(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rhoq']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    RhoQmap = pass_maps['rhoq'].T # charge density
+    Jmap_lim = vec_currentdensity_lim(Bmap)
+    Hallterm_lim = vec_Hallterm(Jmap_lim,Bmap,RhoQmap)
+    return np.swapaxes(Hallterm_lim, 0,1)
 
 def expr_Hall_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # number density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return VectorArrayAnisotropy(Hallterm,Bmap).T
 
 def expr_J(pass_maps, requestvariables=False):
@@ -506,6 +545,25 @@ def expr_J(pass_maps, requestvariables=False):
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
+
+def expr_JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    return np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+
+def expr_log2JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    JperBperp = np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+    return np.ma.log2(JperBperp)
 
 def expr_J3d(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -1136,6 +1194,8 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
         V = vectmap[::step,::step,1]
     elif PLANE=="XZ":
         V = vectmap[::step,::step,2]
+    elif PLANE=="YZ":
+        V = vectmap[::step,::step,0]
     C = colors[::step,::step]
     ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
                        headaxislength=2, scale_units='dots', pivot='middle')
