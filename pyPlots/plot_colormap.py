@@ -69,7 +69,7 @@ def plot_colormap(filename=None,
                   Earth=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
-                  streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,streamlinestartpoints=None,
                   axes=None, cbaxes=None, useimshow=False, imshowinterp='none',noaxes=False,
                   ):
 
@@ -188,6 +188,7 @@ def plot_colormap(filename=None,
     :kword streamlinedensity: Set streamline density (default 1)
     :kword streamlinecolor: Set streamline color (default white)
     :kword streamlinethick: Set streamline thickness
+    :kword streamlinestartpoints: Set streamline start points
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
                         It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
@@ -1234,6 +1235,7 @@ def plot_colormap(filename=None,
             density=streamlinedensity,
             color=streamlinecolor,
             arrowsize=streamlinethick * 0.5,
+            start_points=streamlinestartpoints,
         )
 
     # Optional external additional plotting routine overlayed on color plot
