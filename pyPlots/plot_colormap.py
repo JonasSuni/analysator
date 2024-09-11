@@ -1236,6 +1236,7 @@ def plot_colormap(filename=None,
             color=streamlinecolor,
             arrowsize=streamlinethick * 0.5,
             start_points=streamlinestartpoints,
+            broken_streamlines=False,
         )
 
     # Optional external additional plotting routine overlayed on color plot
