@@ -66,7 +66,7 @@ def newtonmethod(theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
         rstep = rstep * 0.1
     return compr
 
-def rankine(Tu, rhou, V, B, n, Vsh):
+def rankine(Tu, rhou, V, B, n, Vsh,doConvertdHT=True):
     # V, B, n are vectors
     V = np.array(V)
     B = np.array(B)
@@ -80,7 +80,10 @@ def rankine(Tu, rhou, V, B, n, Vsh):
     Bu = B
     
     pu = rhou * k * Tu
-    vHT = np.cross(n, np.cross(Vu, Bu)) / np.dot(n,Bu)
+    if doConvertdHT:
+        vHT = np.cross(n, np.cross(Vu, Bu)) / np.dot(n,Bu)
+    else:
+        vHT = 0
     #logging.info("The de Hoffmann Teller transformation velocity is ", vHT)
 
     VuHT = Vu - vHT
