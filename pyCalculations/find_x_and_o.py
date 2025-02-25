@@ -2,13 +2,13 @@
 #
 import pytools as pt
 import numpy as np
-import pylab as pl
 import matplotlib.pyplot as plt
 import sys
 from scipy.ndimage import convolve
 from scipy.signal import convolve2d
 from shapely import geometry
 from numpy import linalg as LA
+import logging
 
 ## This script searches for the x and o points from the 2D simulations. It assumes polar plane. If you use equatorial plane change the z_array to y_array and it's limits.
 ## It uses the contours of grad(flux_function) to find the extrema and Hessian matrix to define the type of the point (minima, maxima, saddle)
@@ -62,7 +62,7 @@ if len(sys.argv)==2:
 elif len(sys.argv)==3:
    indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]))
 elif len(sys.argv)==4:
-   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),,int(sys.argv[3]))
+   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
 else:
    sys.stderr.write("Syntax: size.py <index>\n")
    sys.stderr.write("or: size.py <starting_index> <final_index+1>\n")
@@ -101,7 +101,7 @@ for index in indexes:
    dfdx,dfdz=np.gradient(flux_function)
 
    #calculate the 0 contours of df/dx and df/dz
-   pl.figure(1)
+   plt.figure(1)
    contour1=plt.contour(x_array,z_array, dfdx, [0])
    contour1_paths=contour1.collections[0].get_paths()
    contour2=plt.contour(x_array,z_array, dfdz, [0])
@@ -179,7 +179,7 @@ for index in indexes:
             o_point_location.append(coords)
             o_point_fluxes.append(interpolated_flux)
 
-   pl.close('all')
+   plt.close('all')
 
    np.savetxt(path_to_save+"/o_point_location_"+str(index)+".txt", o_point_location)
    np.savetxt(path_to_save+"/o_point_location_and_fluxes_"+str(index)+".txt", np.concatenate( (o_point_location,np.array(o_point_fluxes)[:,np.newaxis]), axis=1))

@@ -25,6 +25,7 @@
 import numpy as np
 from plot import cbfmtsci
 from numbers import Number
+import logging
 
 class VariableInfo:
    ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
@@ -72,10 +73,10 @@ class VariableInfo:
              E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
       '''
       if len(self.data) <= 0:
-         print("BAD DATA LENGTH")
+         logging.info("BAD DATA LENGTH")
          return []
       if len(np.atleast_1d(self.data[0])) <= index:
-         print("BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!")
+         logging.info("BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!")
          return []
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
@@ -87,8 +88,6 @@ class VariableInfo:
           :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
           :param vscale:       float, factor to scale the variable with
           :returns: (norming factor, scaledUnits, scaledLatexUnits)
-
-          .. note::
 
       '''
 
@@ -190,12 +189,12 @@ class VariableInfo:
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
             scaledUnits = udict[unitScale]['scaledUnits']
          except KeyError:
-            # print('Missing scaledUnits in specialist dict for' + self.units + ' for unitScale='+str(unitScale))
+            # logging.info('Missing scaledUnits in specialist dict for' + self.units + ' for unitScale='+str(unitScale))
             return 1.0, self.units, self.latexunits
          try:
             scaledLatexUnits = udict[unitScale]['scaledLatexUnit']
          except:
-            # print('Missing scaledLatexUnits in specialist dict for ' + self.units+ ' for unitScale='+str(unitScale))
+            # logging.info('Missing scaledLatexUnits in specialist dict for ' + self.units+ ' for unitScale='+str(unitScale))
             return 1.0, self.units, self.latexunits
       else:
           if vscale is None or np.isclose(vscale, 1.0):
@@ -216,7 +215,6 @@ class VariableInfo:
           :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
           :returns: self, with scaled units with pre-formatted units included in the varinfo.
 
-          .. note::
 
       '''
 

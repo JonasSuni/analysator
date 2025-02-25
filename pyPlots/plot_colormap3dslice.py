@@ -20,6 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import logging
 import matplotlib
 import pytools as pt
 import numpy as np
@@ -75,150 +76,150 @@ def plot_colormap3dslice(filename=None,
 
     ''' Plots a coloured plot with axes and a colour bar.
 
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword run:         run identifier, used for constructing output filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
-                        If directory does not exist, it will be created. If the string does not end in a
-                        forward slash, the final part will be used as a prefix for the files.
-    :kword outputfile:  Singular output file name
+        :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
+        :kword vlsvobj:     Optionally provide a python vlsvfile object instead
+        :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
+        :kword step:        output step index, used for constructing output (and possibly input) filename
+        :kword run:         run identifier, used for constructing output filename
+        :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+                            If directory does not exist, it will be created. If the string does not end in a
+                            forward slash, the final part will be used as a prefix for the files.
+        :kword outputfile:  Singular output file name
 
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
+        :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
-    :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
-                        E, B, v, V or others. Accepts any variable known by analysator/pytools.
-                        Per-population variables are simply given as "proton/rho" etc
-    :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
-                        the queried component, or otherwise the magnitude.
-    :kword op:          duplicate of operator
+        :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
+                            E, B, v, V or others. Accepts any variable known by analysator/pytools.
+                            Per-population variables are simply given as "proton/rho" etc
+        :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
+                            the queried component, or otherwise the magnitude. 
+        :kword op:          duplicate of operator
+            
+        :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
+        :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
+        :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
+                            magma, parula, nipy_spectral, RdBu, bwr
+        :kword title:       string to use as plot title instead of time.
+                            Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
+                            for microsecond accuracy. "sec" is integer second accuracy.
+        :kword cbtitle:     string to use as colorbar title instead of map name
+        :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+        :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
 
-    :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
-    :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
-    :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
-                        magma, parula, nipy_spectral, RdBu, bwr
-    :kword title:       string to use as plot title instead of time.
-                        Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
-                        for microsecond accuracy. "sec" is integer second accuracy.
-    :kword cbtitle:     string to use as colorbar title instead of map name
-    :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
-    :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
-
-    :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
-    :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
-                        min and max values for whole plot (non-zero rho regions only) are used.
-    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
-    :kword lin:         Flag for using linear colour scaling instead of log
-    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
-                        Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
-                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
-                        result in the innermost tick marks overlapping. In this case, using a larger value for
-                        symlog is suggested.
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
-                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
-    :kword Earth:       If set, draws an earth at (0,0)
-    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print).
-
-
-    :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
-
-    :kword noborder:    Plot figure edge-to-edge without borders (default off)
-    :kword noxlabels:   Suppress x-axis labels and title
-    :kword noylabels:   Suppress y-axis labels and title
-    :kword scale:       Scale text size (default=1.0)
-    :kword thick:       line and axis thickness, default=1.0
-    :kword nocb:        Set to suppress drawing of colourbar
-    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
-                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-
-    :kword external:    Optional function to use for external plotting of e.g. contours. The function
-                        receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
-                        If the function accepts a fifth variable, if set to true, it is expected to
-                        return a list of required variables for constructing the pass_maps dictionary.
-    :kword expression:  Optional function which calculates a custom expression to plot. The function
-                        receives the same dictionary of numpy arrays as external, as an argument pass_maps,
-                        the contents of which are maps of variables. Each is either of size [ysize,xsize]
-                        or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
-                        If the function accepts a second variable, if set to true, it is expected to
-                        return a list of required variables for pass_maps.
-
-    Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
-    for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
-    on, see the plot_helpers.py file.
-
-    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
-                        or from tesla to nanotesla. Guesses correct units for colourbar for some known
-                        variables. Set to None to seek for a default scaling.
-    :kword absolute:    Plot the absolute of the evaluated variable
-
-    :kword pass_vars:   Optional list of map names to pass to the external/expression functions
-                        as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or
-                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
-    :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
-                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
-                        pass_times has two values, the first is the extent before, the second after.
-                        (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
-                        for a total of four timesteps)
-                        This causes pass_vars to become a list of timesteps, with each timestep containing
-                        a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
-                        added as 'dstep' which gives the timestep offset from the master frame.
-                        Does not work if working from a vlsv-object.
-    :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
-
-    :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
-                        the regular source file and the file given by this keyword. This overides external
-                        and expression keywords, as well as related pass_vars, pass_times, and pass_full.
-
-    :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
-    :kword nomask:      Do not mask plotting based on proton density
-
-    :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
-    :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
-    :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
-    :kword vectorsize:  Scaling of vector sizes
-
-    :kword streamlines: Set to a vector variable to overplot as streamlines
-    :kword streamlinedensity: Set streamline density (default 1)
-    :kword streamlinecolor: Set streamline color (default white)
-    :kword streamlinethick: Set streamline thickness
-
-    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
-                        It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
-                        to be automatically added next to the panel (but this may affect the overall layout)
-                        Note that the aspect ratio of the colormap is made equal in any case, hence the axes
-                        proportions may change if the box and axes size are not designed to match by the user
-    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-    :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
-    :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
-    :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
-    :kword useimshow:   Use imshow for raster background instead (default: False)
-    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+        :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
+        :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
+                            min and max values for whole plot (non-zero rho regions only) are used.
+        :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
+        :kword lin:         Flag for using linear colour scaling instead of log
+        :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+                            Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
+                            A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
+                            result in the innermost tick marks overlapping. In this case, using a larger value for 
+                            symlog is suggested.
+        :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+                            string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+        :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+        :kword Earth:       If set, draws an earth at (0,0)
+        :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
 
 
-    :returns:           Outputs an image to a file or to the screen.
+        :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
-    .. code-block:: python
+        :kword noborder:    Plot figure edge-to-edge without borders (default off)
+        :kword noxlabels:   Suppress x-axis labels and title
+        :kword noylabels:   Suppress y-axis labels and title
+        :kword scale:       Scale text size (default=1.0)
+        :kword thick:       line and axis thickness, default=1.0
+        :kword nocb:        Set to suppress drawing of colourbar
+        :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+                            string, tries to use that as the location, e.g. "NW","NE","SW","SW"
 
-    # Example usage:
-    plot_colormap(filename=fileLocation, var="MA", run="BCQ",
-                  colormap='nipy_spectral',step=j, outputdir=outputLocation,
-                  lin=1, wmark=1, vmin=2.7, vmax=10,
-                  external=cavitoncontours, pass_vars=['rho','B','beta'])
-    # Where cavitoncontours is an external function which receives the arguments
-    #  ax, XmeshXY,YmeshXY, pass_maps
-    # where pass_maps is a dictionary of maps for the requested variables.
+        :kword external:    Optional function to use for external plotting of e.g. contours. The function
+                            receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
+                            If the function accepts a fifth variable, if set to true, it is expected to 
+                            return a list of required variables for constructing the pass_maps dictionary.
+        :kword expression:  Optional function which calculates a custom expression to plot. The function
+                            receives the same dictionary of numpy arrays as external, as an argument pass_maps,
+                            the contents of which are maps of variables. Each is either of size [ysize,xsize]
+                            or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+                            If the function accepts a second variable, if set to true, it is expected to 
+                            return a list of required variables for pass_maps.
 
-    # example (simple) use of expressions:
-    def exprMA_cust(exprmaps, requestvariables=False):
-        if requestvariables==True:
-           return ['va']
-        custombulkspeed=750000. # m/s
-        va = exprmaps['va'][:,:]
-        MA = custombulkspeed/va
-        return MA
-    plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
+        Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
+        for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+        on, see the plot_helpers.py file.
+
+        :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+                            or from tesla to nanotesla. Guesses correct units for colourbar for some known
+                            variables. Set to None to seek for a default scaling.
+        :kword absolute:    Plot the absolute of the evaluated variable
+
+        :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
+                            as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
+                            for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+        :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
+                            functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
+                            pass_times has two values, the first is the extent before, the second after.
+                            (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
+                            for a total of four timesteps)
+                            This causes pass_vars to become a list of timesteps, with each timestep containing
+                            a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
+                            added as 'dstep' which gives the timestep offset from the master frame.
+                            Does not work if working from a vlsv-object.
+        :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
+
+        :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
+                            the regular source file and the file given by this keyword. This overides external
+                            and expression keywords, as well as related pass_vars, pass_times, and pass_full.
+
+        :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+        :kword nomask:      Do not mask plotting based on proton density
+
+        :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
+        :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
+        :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+        :kword vectorsize:  Scaling of vector sizes
+
+        :kword streamlines: Set to a vector variable to overplot as streamlines
+        :kword streamlinedensity: Set streamline density (default 1)
+        :kword streamlinecolor: Set streamline color (default white)
+        :kword streamlinethick: Set streamline thickness
+
+        :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+                            It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
+                            to be automatically added next to the panel (but this may affect the overall layout)
+                            Note that the aspect ratio of the colormap is made equal in any case, hence the axes
+                            proportions may change if the box and axes size are not designed to match by the user
+        :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
+        :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
+        :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
+        :kword useimshow:   Use imshow for raster background instead (default: False)
+        :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+
+
+        :returns:           Outputs an image to a file or to the screen.
+
+        .. code-block:: python
+
+            # Example usage:
+            plot_colormap(filename=fileLocation, var="MA", run="BCQ",
+                        colormap='nipy_spectral',step=j, outputdir=outputLocation,
+                        lin=1, wmark=1, vmin=2.7, vmax=10, 
+                        external=cavitoncontours, pass_vars=['rho','B','beta'])
+            # Where cavitoncontours is an external function which receives the arguments
+            #  ax, XmeshXY,YmeshXY, pass_maps
+            # where pass_maps is a dictionary of maps for the requested variables.
+
+            # example (simple) use of expressions:
+            def exprMA_cust(exprmaps, requestvariables=False):
+                if requestvariables==True:
+                return ['va']
+                custombulkspeed=750000. # m/s
+                va = exprmaps['va'][:,:]
+                MA = custombulkspeed/va
+                return MA
+            plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
 
     '''
 
@@ -259,7 +260,7 @@ def plot_colormap3dslice(filename=None,
     elif vlsvobj:
         f = vlsvobj
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
     
     if operator is None:
@@ -324,7 +325,7 @@ def plot_colormap3dslice(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
-            print("Unknown operator "+str(operator))
+            logging.info("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -357,11 +358,9 @@ def plot_colormap3dslice(filename=None,
 
     # Activate diff mode?
     if diff:
-        if expression or external or pass_vars or pass_times or pass_full:
-            print("attempted to perform diff with one of the following active:")
-            print(
-                "expression or external or pass_vars or pass_times or pass_full. Exiting."
-            )
+        if (expression or external or pass_vars or pass_times or pass_full):
+            logging.info("attempted to perform diff with one of the following active:")
+            logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
             return -1
         expression = pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
@@ -373,8 +372,8 @@ def plot_colormap3dslice(filename=None,
     #   xyz = (slice normal direction, 0:x, 1:y, 2:z
     slicestr = "_slice"
     if not isinstance(normal, str):
-        if len(normal != 3):
-            print("Error in interpreting normal ", normal)
+        if len(normal!=3):
+            logging.info("Error in interpreting normal " + str(normal))
             exit
     else:
         if normal[0] == "x":
@@ -420,22 +419,16 @@ def plot_colormap3dslice(filename=None,
                 pass
 
         if not os.access(outputdir, os.W_OK):
-            print(("No write access for directory " + outputdir + "! Exiting."))
+            logging.info(("No write access for directory "+outputdir+"! Exiting."))
             return
 
         # Check if target file already exists and overwriting is disabled
-        if nooverwrite and os.path.exists(outputfile):
-            if os.stat(outputfile).st_size > 0:  # Also check that file is not empty
-                print(("Found existing file " + outputfile + ". Skipping."))
+        if (nooverwrite and os.path.exists(outputfile)):            
+            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+                logging.info(("Found existing file "+outputfile+". Skipping."))
                 return
             else:
-                print(
-                    (
-                        "Found existing file "
-                        + outputfile
-                        + " of size zero. Re-rendering."
-                    )
-                )
+                logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     Re = 6.371e6  # Earth radius in m
     # read in mesh size and cells in ordinary space
@@ -458,13 +451,13 @@ def plot_colormap3dslice(filename=None,
         pt.plot.plot_helpers.CELLSIZE = cellsizefg
     except:
         if xsize!=1 and ysize!=1 and zsize!=1:
-            print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            logging.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
             [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
             [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            print("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
             return -1
 
     # sort the cellid and the datamap list
@@ -479,18 +472,11 @@ def plot_colormap3dslice(filename=None,
             break
 
     # Verify that FSgrid and spatial grid agree
-    if (
-        (xmin != xminfg)
-        or (xmax != xmaxfg)
-        or (ymin != yminfg)
-        or (ymax != ymaxfg)
-        or (zmin != zminfg)
-        or (zmax != zmaxfg)
-        or (xsize * (2 ** reflevel) != xsizefg)
-        or (ysize * (2 ** reflevel) != ysizefg)
-        or (zsize * (2 ** reflevel) != zsizefg)
-    ):
-        print("FSgrid and vlasov grid disagreement!")
+    if ((xmin!=xminfg) or (xmax!=xmaxfg) or
+        (ymin!=yminfg) or (ymax!=ymaxfg) or
+        (zmin!=zminfg) or (zmax!=zmaxfg) or
+        (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
+        logging.info("FSgrid and vlasov grid disagreement!")
         return -1
 
     if cutpointre is not None:
@@ -602,8 +588,8 @@ def plot_colormap3dslice(filename=None,
         datamap = datamap_info.data
 
         # Verify data shape
-        if np.ndim(datamap) == 0:
-            print("Error, read only single value from vlsv file!", datamap.shape)
+        if np.ndim(datamap)==0:
+            logging.info("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
             return -1
 
         if var.startswith("fg_"):
@@ -630,7 +616,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2] >= 0:
                     datamap = datamap[:, :, fgslice[2], :, :]
             else:
-                print("Error in reshaping fsgrid datamap!")
+                logging.info("Error in reshaping fsgrid datamap!") 
             datamap = np.squeeze(datamap)
             datamap = np.swapaxes(datamap, 0, 1)
 
@@ -666,7 +652,7 @@ def plot_colormap3dslice(filename=None,
                     (datamap.shape[1], datamap.shape[2]),
                 )
             else:
-                print("Dimension error in constructing 2D AMR slice!")
+                logging.info("Dimension error in constructing 2D AMR slice!")
                 return -1
     else:
         # Expression set, use generated or provided colorbar title
@@ -787,7 +773,7 @@ def plot_colormap3dslice(filename=None,
                             elif fgslice[2] >= 0:
                                 pass_map = pass_map[:, :, fgslice[2], :, :]
                         else:
-                            print("Error in reshaping fsgrid pass_map!")
+                            logging.info("Error in reshaping fsgrid pass_map!") 
                         pass_map = np.squeeze(pass_map)
                         pass_map = np.swapaxes(pass_map, 0, 1)
                 else:
@@ -802,16 +788,8 @@ def plot_colormap3dslice(filename=None,
                         elif np.ndim(pass_map) == 3:  # tensor variable
                             pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
-                            print("Error in reshaping pass_maps!")
-                        pass_map = ids3d.idmesh3d2(
-                            cellids,
-                            pass_map,
-                            meshReflevel,
-                            xsize,
-                            ysize,
-                            zsize,
-                            pass_shape,
-                        )
+                            logging.info("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                     else:
                         pass_map = pass_map[indexlist]  # find required cells
                         if np.ndim(pass_map) == 1:
@@ -821,18 +799,9 @@ def plot_colormap3dslice(filename=None,
                         elif np.ndim(pass_map) == 3:  # tensor variable
                             pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
-                            print("Error in reshaping pass_maps!")
-                        pass_map = ids3d.idmesh3d(
-                            idlist,
-                            pass_map,
-                            meshReflevel,
-                            xsize,
-                            ysize,
-                            zsize,
-                            xyz,
-                            pass_shape,
-                        )
-
+                            logging.info("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
+                        
                 # At this point, the map has been ordered into a 2D or 3D image
                 if np.ma.is_masked(maskgrid) and not pass3d:
                     if np.ndim(pass_map) == 2:
@@ -850,16 +819,14 @@ def plot_colormap3dslice(filename=None,
             # Note: pass_maps is now a list of dictionaries
             pass_maps = []
             if diff:
-                print("Comparing files " + filename + " and " + diff)
+                logging.info("Comparing files "+filename+" and "+diff)
             elif step is not None and filename:
                 currstep = step
             else:
                 if filename:  # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
-                    print(
-                        "Error, cannot determine current step for time extent extraction!"
-                    )
+                    logging.info("Error, cannot determine current step for time extent extraction!")
                     return
             # define relative time step selection
             if np.ndim(pass_times) == 0:
@@ -869,7 +836,7 @@ def plot_colormap3dslice(filename=None,
                     -abs(int(pass_times[0])), abs(int(pass_times[1])) + 1
                 )
             else:
-                print("Invalid value given to pass_times")
+                logging.info("Invalid value given to pass_times")
                 return
             # Loop over requested times
             for ds in dsteps:
@@ -880,11 +847,9 @@ def plot_colormap3dslice(filename=None,
                         filenamestep = diff
                 else:
                     # Construct using known filename.
-                    filenamestep = (
-                        filename[:-12] + str(currstep + ds).rjust(7, "0") + ".vlsv"
-                    )
-                    print(filenamestep)
-                fstep = pt.vlsvfile.VlsvReader(filenamestep)
+                    filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
+                    logging.info(filenamestep)
+                fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
                 step_indexids = step_cellids.argsort()
                 step_cellids = step_cellids[step_indexids]
@@ -963,7 +928,7 @@ def plot_colormap3dslice(filename=None,
                                 elif fgslice[2] >= 0:
                                     pass_map = pass_map[:, :, fgslice[2], :, :]
                             else:
-                                print("Error in reshaping fsgrid pass_map!")
+                                logging.info("Error in reshaping fsgrid pass_map!") 
                             pass_map = np.squeeze(pass_map)
                             pass_map = np.swapaxes(pass_map, 0, 1)
                     else:
@@ -978,16 +943,8 @@ def plot_colormap3dslice(filename=None,
                             elif np.ndim(pass_map) == 3:  # tensor variable
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
-                                print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d2(
-                                step_cellids,
-                                pass_map,
-                                meshReflevel,
-                                xsize,
-                                ysize,
-                                zsize,
-                                pass_shape,
-                            )
+                                logging.info("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d2(step_cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
                             pass_map = pass_map[step_indexlist]  # find required cells
                             if np.ndim(pass_map) == 1:
@@ -997,17 +954,8 @@ def plot_colormap3dslice(filename=None,
                             elif np.ndim(pass_map) == 3:  # tensor variable
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
-                                print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d(
-                                step_idlist,
-                                pass_map,
-                                meshReflevel,
-                                xsize,
-                                ysize,
-                                zsize,
-                                xyz,
-                                pass_shape,
-                            )
+                                logging.info("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map)==2:
@@ -1063,7 +1011,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2] >= 0:
                     datamap = datamap[:, :, fgslice[2], :, :]
             else:
-                print("Error in reshaping fsgrid datamap!")
+                logging.info("Error in reshaping fsgrid datamap!") 
             datamap = np.squeeze(datamap)
             datamap = np.swapaxes(datamap, 0, 1)
 
@@ -1087,42 +1035,30 @@ def plot_colormap3dslice(filename=None,
             if operator=='z': 
                 operator = '2'
             if not operator.isdigit():
-                print("Error parsing operator for custom expression!")
+                logging.info("Error parsing operator for custom expression!")
                 return
             elif np.ndim(datamap) == 3:
                 datamap = datamap[:, :, int(operator)]
 
     # Now, if map is a vector or tensor, reduce it down
-    if np.ndim(datamap) == 3:  # vector
-        if datamap.shape[2] != 3:
-            print(
-                "Error, expected array of 3-element vectors, found array of shape ",
-                datamap.shape,
-            )
+    if np.ndim(datamap)==3: # vector
+        if datamap.shape[2]!=3:
+            logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
             return -1
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap) == 4:  # tensor
         if datamap.shape[2] != 3 or datamap.shape[3] != 3:
             # This may also catch 3D simulation fsgrid variables
-            print(
-                "Error, expected array of 3x3 tensors, found array of shape ",
-                datamap.shape,
-            )
+            logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
             return -1
         # take trace
-        datamap = datamap[:, :, 0, 0] + datamap[:, :, 1, 1] + datamap[:, :, 2, 2]
-    if np.ndim(datamap) >= 5:  # Too many dimensions
-        print(
-            "Error, too many dimensions in datamap, found array of shape ",
-            datamap.shape,
-        )
+        datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
+    if np.ndim(datamap)>=5: # Too many dimensions
+        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
         return -1
-    if np.ndim(datamap) != 2:  # Too many dimensions
-        print(
-            "Error, too many dimensions in datamap, found array of shape ",
-            datamap.shape,
-        )
+    if np.ndim(datamap)!=2: # Too many dimensions
+        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
         return -1
 
     # Scale final generated datamap if requested
@@ -1173,8 +1109,8 @@ def plot_colormap3dslice(filename=None,
         vmaxuse = np.ma.amax(datamap)
 
     # If both values are zero, we have an empty array
-    if vmaxuse == vminuse == 0:
-        print("Error, requested array is zero everywhere. Exiting.")
+    if vmaxuse==vminuse==0:
+        logging.info("Error, requested array is zero everywhere. Exiting.")
         return 0
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -1217,7 +1153,7 @@ def plot_colormap3dslice(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(
@@ -1399,7 +1335,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2] >= 0:
                     vectmap = vectmap[:, :, fgslice[2], :]
             else:
-                print("Error in reshaping fsgrid vectmap!")
+                logging.info("Error in reshaping fsgrid vectmap!") 
             vectmap = np.squeeze(vectmap)
             vectmap = np.swapaxes(vectmap, 0, 1)
         else:
@@ -1488,7 +1424,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2] >= 0:
                     slinemap = slinemap[:, :, fgslice[2], :]
             else:
-                print("Error in reshaping fsgrid slinemap!")
+                logging.info("Error in reshaping fsgrid slinemap!") 
             slinemap = np.squeeze(slinemap)
             slinemap = np.swapaxes(slinemap, 0, 1)
         else:
@@ -1812,8 +1748,8 @@ def plot_colormap3dslice(filename=None,
                 outputfile, dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad
             )
         except:
-            print("Error with attempting to save figure.")
-        print(outputfile+"\n")
+            logging.info("Error with attempting to save figure.")
+        logging.info(outputfile+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen

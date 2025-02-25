@@ -11,7 +11,7 @@
 #
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-
+import logging
 from matplotlib import __version__ as mpl_version
 from matplotlib.colors import LinearSegmentedColormap
 from packaging.version import Version
@@ -1362,11 +1362,18 @@ _SCMfiles = glob.glob(_fpath+"/SCM8/*.txt")
 for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
+    if Version(mpl_version) >= Version("3.10.0"): # MPL 3.10.0 included these colormaps, skip
+        if _cm_name in ["berlin","vanimo","managua"]: 
+            continue
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
-    if Version(mpl_version) > Version("3.5.0"):
-        mcm.register(_cm)
-        mcm.register(_cm.reversed())
-    else:
-        plt.register_cmap(cmap=_cm)
-        plt.register_cmap(cmap=_cm.reversed())
+    try:
+        if Version(mpl_version) > Version("3.5.0"):
+            mcm.register(_cm)
+            mcm.register(_cm.reversed())
+        else:
+            plt.register_cmap(cmap=_cm)
+            plt.register_cmap(cmap=_cm.reversed())
+    except Exception as e:
+        logging.warning("Problem registering colormap " + _cm_name + ". Produced exception was:\n"+str(e))
+

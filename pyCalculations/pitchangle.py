@@ -25,6 +25,7 @@ import pytools as pt
 import numpy as np
 import sys, os
 from output import output_1d
+import logging
 
 def pitch_angles( vlsvReader,
                      cellid,
@@ -40,43 +41,43 @@ def pitch_angles( vlsvReader,
 
    ''' Calculates the pitch angle distribution for a given cell
 
-   :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.
-   :param cellid:            The cell id whose pitch angle the user wants
-                             NOTE: The cell id must have a velocity distribution!
-   :kword filename:          path to .vlsv file to use for input.
-   :kword filedir:           Optionally provide directory where files are located and use step for bulk file name
-   :kword step:              output step index, used for constructing output (and possibly input) filename
+      :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.
+      :param cellid:            The cell id whose pitch angle the user wants
+                              NOTE: The cell id must have a velocity distribution!
+      :kword filename:          path to .vlsv file to use for input.
+      :kword filedir:           Optionally provide directory where files are located and use step for bulk file name
+      :kword step:              output step index, used for constructing output (and possibly input) filename
 
-   :kword nbins:             How many bins to use for the distribution
-   :kword cosine:            True if returning the pitch angles as a cosine(alpha) plot [-1,1].
-                             If false, returns as pitch angle in degrees [0,180].
+      :kword nbins:             How many bins to use for the distribution
+      :kword cosine:            True if returning the pitch angles as a cosine(alpha) plot [-1,1].
+                              If false, returns as pitch angle in degrees [0,180].
 
-   :kword plasmaframe:       True if the user wants to get the pitch angle distribution
-                             in the plasma frame (for this population).
-                             If set to a string, will try to use the string as a variable for
-                             the frame to transform into.
-                             If set to a 3-element vector, will use that frame instead.
+      :kword plasmaframe:       True if the user wants to get the pitch angle distribution
+                              in the plasma frame (for this population).
+                              If set to a string, will try to use the string as a variable for
+                              the frame to transform into.
+                              If set to a 3-element vector, will use that frame instead.
 
-   :kword vcut:              Set to True to ignore velocity cells below 2x the thermal speed.
-                             If set to a number, will use that velocity in m/s instead.
-   :kword vcutmax:           Set to True to ignore velocity cells above 2x the thermal speed.
-                             If set to a number, will use that velocity in m/s instead.
+      :kword vcut:              Set to True to ignore velocity cells below 2x the thermal speed.
+                              If set to a number, will use that velocity in m/s instead.
+      :kword vcutmax:           Set to True to ignore velocity cells above 2x the thermal speed.
+                              If set to a number, will use that velocity in m/s instead.
 
-   :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
-                             If directory does not exist, it will be created. Filenames within directory are
-                             generated automatically.
-   :kword outputfile:        Provide exact output file name (including complete path)
+      :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
+                              If directory does not exist, it will be created. Filenames within directory are
+                              generated automatically.
+      :kword outputfile:        Provide exact output file name (including complete path)
 
-   :kword pop:               Active population, defaults to proton (avgs)
+      :kword pop:               Active population, defaults to proton (avgs)
 
-   :returns: pitch angles and avgs [pitch_angles, avgs]
+      :returns: pitch angles and avgs [pitch_angles, avgs]
 
-       .. code-block:: python
+      .. code-block:: python
 
-          # Example usage:
-          vlsvReader = VlsvReader("restart.0000798.vlsv")
-          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True,
-                                 plasmaframe=True, outputdir="/wrk/username/pitchangledirectory/" )
+         # Example usage:
+         vlsvReader = VlsvReader("restart.0000798.vlsv")
+         result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True,
+                              plasmaframe=True, outputdir="/wrk/username/pitchangledirectory/" )
    '''
 
    # Input file or object
@@ -101,7 +102,7 @@ def pitch_angles( vlsvReader,
          elif vlsvReader.check_variable(pop+"/vg_V"):
             frame = vlsvReader.read_variable(pop+'/vg_V', cellid)
          else:
-            print("Error extracting plasma frame velocity!")
+            logging.info("Error extracting plasma frame velocity!")
       elif len(plasmaframe)==3: # Assume it's a vector
          frame = plasmaframe
 
@@ -121,13 +122,13 @@ def pitch_angles( vlsvReader,
       if not vlsvReader.check_population(pop):
          if vlsvReader.check_population("avgs"):
             pop="avgs"
-            #print("Auto-switched to population avgs")
+            #logging.info("Auto-switched to population avgs")
          else:
-            print("Unable to detect population "+pop+" in .vlsv file!")
+            logging.info("Unable to detect population "+pop+" in .vlsv file!")
             sys.exit()
    else:
       if not vlsvReader.check_population(pop):
-         print("Unable to detect population "+pop+" in .vlsv file!")
+         logging.info("Unable to detect population "+pop+" in .vlsv file!")
          sys.exit()
 
    # Read temperature for thermal speed
@@ -195,7 +196,7 @@ def pitch_angles( vlsvReader,
    cond1 = (v_norms > vcutoff)
    cond2 = (v_norms < vcutoffmax)
    condition = np.logical_and(cond1,cond2)
-   print(cond1.shape,cond2.shape,condition.shape)
+   logging.info(cond1.shape,cond2.shape,condition.shape)
    # Get the velocity cells above cutoff speed
    #vcellids_nonsphere = np.extract(condition, vcellids)
    # Get the avgs
@@ -211,7 +212,7 @@ def pitch_angles( vlsvReader,
 
    rho_summed    = np.sum(avgs)
    rho_nonsphere = np.sum(avgs_nonsphere)
-   print("rho",rho_summed, rho_nonsphere)
+   logging.info("rho: " + str(rho_summed) + ", rho_nonsphere: " + str(rho_nonsphere))
 
    if outputfile!=None or outputdir!=None: # Save output to file
       # Generate filename
@@ -219,7 +220,7 @@ def pitch_angles( vlsvReader,
       if outputfile==None:
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
       if outputfile!=None and outputdir!=None:
-         print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
+         logging.info("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory
       outputprefixind = outputfile.rfind('/')
@@ -232,7 +233,7 @@ def pitch_angles( vlsvReader,
          except:
             pass
       if not os.access(outputdir, os.W_OK):
-         print("No write access for directory "+outputdir+"! Exiting.")
+         logging.info("No write access for directory "+outputdir+"! Exiting.")
          return
 
 
