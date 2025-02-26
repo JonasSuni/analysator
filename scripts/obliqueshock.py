@@ -20,7 +20,8 @@ k = 1.3806506e-23
 Gamma = 5.0/3.0
 
 def polynome(X, theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
-    return (V1sq-X*vA1sq)**2 * (X*vs1sq + 0.5*V1sq*np.cos(theta)**2*(X*(Gamma-1)-(Gamma+1))) + 0.5*vA1sq*V1sq*X*np.sin(theta)**2 * ((Gamma+X*(2-Gamma))*V1sq - X*vA1sq*((Gamma+1)-X*(Gamma-1)))
+    #return (V1sq-X*vA1sq)**2 * (X*vs1sq + 0.5*V1sq*np.cos(theta)**2*(X*(Gamma-1)-(Gamma+1))) + 0.5*vA1sq*V1sq*X*np.sin(theta)**2 * ((Gamma+X*(2-Gamma))*V1sq - X*vA1sq*((Gamma+1)-X*(Gamma-1)))
+    return (V1sq-X*vA1sq*np.cos(theta)**2)**2 * (X*vs1sq + 0.5*V1sq*(X*(Gamma-1)-(Gamma+1))) + 0.5*vA1sq*V1sq*X*np.sin(theta)**2 * ((Gamma+X*(2-Gamma))*V1sq - (X*vA1sq*np.cos(theta)**2)*((Gamma+1)-X*(Gamma-1)))
 
 def newtonmethod(theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
     calctemp1 = 1. + 0.5*Gamma*beta1
@@ -66,7 +67,7 @@ def newtonmethod(theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
         rstep = rstep * 0.1
     return compr
 
-def rankine(Tu, rhou, V, B, n, Vsh,doConvertdHT=True):
+def rankine(Tu, rhou, V, B, n, Vsh, doConvertdHT=True):
     # V, B, n are vectors
     V = np.array(V)
     B = np.array(B)
