@@ -71,7 +71,8 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
    
    # Function for solving X, the compression ratio
    def solver(x):
-      return (V1**2 - x * vA1**2)**2 * (x * vs1**2 + 0.5 * V1**2 * np.cos(theta)**2 * (x * (Gamma - 1) -(Gamma + 1))) + 0.5 * vA1**2 * V1**2 * np.sin(theta)**2 * x * ((Gamma + x * (2 - Gamma)) * V1**2 - x * vA1**2 * ((Gamma + 1) - x * (Gamma -1)))
+      #return (V1**2 - x * vA1**2)**2 * (x * vs1**2 + 0.5 * V1**2 * np.cos(theta)**2 * (x * (Gamma - 1) -(Gamma + 1))) + 0.5 * vA1**2 * V1**2 * np.sin(theta)**2 * x * ((Gamma + x * (2 - Gamma)) * V1**2 - x * vA1**2 * ((Gamma + 1) - x * (Gamma -1)))
+      return (V1**2 - x*vA1**2*np.cos(theta)**2)**2 * (x * vs1**2 + 0.5 * V1**2 * (x * (Gamma-1) - (Gamma+1))) + 0.5 * vA1**2 * V1**2 * x * np.sin(theta)**2 * ((Gamma + x * (2-Gamma)) * V1**2 - (x * vA1**2 * np.cos(theta)**2) * ((Gamma+1)-x*(Gamma-1)))
 
    solutions = []
 
