@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import argparse
 from analysator.calculations.cutthrough import cut_through
 from analysator.calculations.lineout import lineout
+import psutil
 
 r_e = 6.371e6
 
@@ -34,6 +35,15 @@ r_e = 6.371e6
         npoints: Number of points in line, default=100
         interpolation_order: Order of interpolation (0 or 1), default=1
 """
+
+
+def memory_usage_psutil():
+    # return the memory usage in MB
+    import psutil
+
+    process = psutil.Process(os.getpid())
+    mem = process.get_memory_info()[0] / float(2**20)
+    return mem
 
 
 def jplots(
@@ -97,6 +107,7 @@ def jplots(
             interpolation_order=interpolation_order,
         )
         data_arr[idx, :] = linecut[2]
+        print("fnr = {}, Using {} MB of memory".format(fnr, memory_usage_psutil()))
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
 
