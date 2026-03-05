@@ -107,6 +107,7 @@ def jplots(
             interpolation_order=interpolation_order,
         )
         data_arr[idx, :] = linecut[2]
+        del vlsvobj
         print("fnr = {}, Using {} MB of memory".format(fnr, memory_usage_psutil()))
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
