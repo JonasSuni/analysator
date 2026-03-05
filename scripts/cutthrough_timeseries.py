@@ -96,6 +96,7 @@ def jplots(
         vlsvobj = pt.vlsvfile.VlsvReader(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
         )
+        vlsvobj.skipread = True
         t_arr[idx] = vlsvobj.read_parameter("time")
         linecut = lineout(
             vlsvobj,
@@ -107,7 +108,7 @@ def jplots(
             interpolation_order=interpolation_order,
         )
         data_arr[idx, :] = linecut[2]
-        del vlsvobj
+        # del vlsvobj
         print("fnr = {}, Using {} MB of memory".format(fnr, memory_usage_psutil()))
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
