@@ -38,7 +38,7 @@ def cartesian_to_spherical(cartesian_coords):
     x, y, z = cartesian_coords[0], cartesian_coords[1], cartesian_coords[2]
     r = np.sqrt(x**2+y**2+z**2)
     theta = np.arctan2(np.sqrt(y**2+z**2), x) #inclination
-    phi = np.mod(np.arctan2(z, y),2*np.pi) # azimuth
+    phi = np.arctan2(z, y)+np.pi # azimuth
 
     return [r, theta, phi]
 
