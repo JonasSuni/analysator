@@ -342,9 +342,9 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
     
     # dayside magetopause from subsolar point towards origo
     dayside_magnetopause = np.zeros((theta_slices, phi_slices, 3))
-    print(sph_points)
-    print(theta_slices)
-    print(phi_slices)
+    print(sph_points.keys())
+    print(range(theta_slices))
+    print(range(phi_slices))
     for ring_idx in range(theta_slices):
         ring_points = np.zeros((phi_slices, 3))
         for phi_idx in range(phi_slices):
