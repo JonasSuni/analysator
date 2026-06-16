@@ -226,7 +226,7 @@ def streamline_stopping_condition(vlsvReader, points, value):
    return (x < xmin)|(x > xmax) | (y < ymin)|(y > ymax) | (z < zmin)|(z > zmax)|(value[:,0] > 0)| (beta_star < 0.4)
 
 
-def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000],  dl=2e6, iterations=200):
+def make_streamlines(vlsvfile, vlsvreader=None, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000],  dl=2e6, iterations=200):
     """Traces streamlines of velocity field from outside the magnetosphere to magnetotail.
         Stopping condition for when streamlines turn sunwards, go out of box, or hit beta* below 0.4 region
 
@@ -242,7 +242,10 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
         :returns: streamlines as numpy array
     """
 
-    f = pt.vlsvfile.VlsvReader(file_name=vlsvfile)
+    if not vlsvreader:
+        f = pt.vlsvfile.VlsvReader(file_name=vlsvfile)
+    else:
+        f = vlsvreader
 
     # Create streamline starting points if needed
     if not np.any(streamline_seeds):
@@ -435,7 +438,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
     return magnetopause
 
 
-def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
+def find_magnetopause_sw_streamline_3d(vlsvfile, vlsvreader=None, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
     """Finds the magnetopause position by tracing streamlines of the velocity field.
 
         Note: there may be a slight jump at x=0. This may be due to difference in methods (pointcloud vs. interpolation).
@@ -457,7 +460,7 @@ def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=
         :returns:   vertices, surface where vertices are numpy arrays in shape [[x0,y0,z0], [x1,y1,z1],...] and surface is a vtk vtkDataSetSurfaceFilter object
     """
 
-    streams = make_streamlines(vlsvfile, streamline_seeds, seeds_n, seeds_x0, seeds_range, dl, iterations)
+    streams = make_streamlines(vlsvfile, vlsvreader, streamline_seeds, seeds_n, seeds_x0, seeds_range, dl, iterations)
     magnetopause = make_magnetopause(streams, end_x, x_point_n, sector_n, ignore)
     vertices, faces = make_surface(magnetopause)
     surface = make_vtk_surface(vertices, faces)
