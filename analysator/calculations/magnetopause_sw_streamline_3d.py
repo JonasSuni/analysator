@@ -365,7 +365,10 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
     ### x < 0 magnetopause ###
     # rest: look for magnetopause in yz-planes
     ## define points in the x axis where to find magnetopause points on the yz-plane
-    x_points = np.linspace(0.0, end_x, int((np.abs(end_x)/np.abs(subsolar_x-end_x))*x_point_n))
+    if end_x < 0:
+        x_points = np.linspace(0.0, end_x, int((np.abs(end_x)/np.abs(subsolar_x-end_x))*x_point_n))
+    else:
+        x_points = np.array([],dtype=float)
     
     ## interpolate more exact points for streamlines at exery x_point
     new_streampoints = np.zeros((len(x_points), len(streams), 2)) # new array for keeping interpolated streamlines in form new_streampoints[x_point, streamline, y and z -coordinates] 
