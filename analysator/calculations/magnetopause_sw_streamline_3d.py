@@ -304,7 +304,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
         subsolar_x = np.partition(x_axis_points[:,0], ignore)[ignore] # take the nth point as subsolar point
 
     # divide the x point numbers between x > 0 (radial) an x < 0 (yz-planes) by ratio
-    dayside_x_point_n =  int((subsolar_x/np.abs(end_x))*x_point_n)
+    dayside_x_point_n =  int((subsolar_x/np.abs(subsolar_x-end_x))*x_point_n)
 
     ### dayside magnetopause ###
     # for x > 0, look for magnetopause radially
